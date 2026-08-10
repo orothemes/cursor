@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Desdobra — Sistema de Apostas 1X2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg0: #0b1210;
+      --bg1: #122019;
+      --bg2: #1a2e24;
+      --ink: #eef6f0;
+      --muted: #9bb0a3;
+      --line: rgba(238, 246, 240, 0.12);
+      --accent: #c8f560;
+      --accent-ink: #132016;
+      --warn: #ffb454;
+      --danger: #ff7a7a;
+      --ok: #6dffb0;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+      --radius: 18px;
+      --font-display: "Syne", sans-serif;
+      --font-body: "DM Sans", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: var(--font-body);
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(200, 245, 96, 0.16), transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, rgba(109, 255, 176, 0.08), transparent 50%),
+        linear-gradient(165deg, var(--bg0), var(--bg1) 45%, #0e1814 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.04;
+      background-image:
+        linear-gradient(rgba(255,255,255,.35) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.35) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(circle at 50% 20%, black, transparent 75%);
+    }
+
+    .wrap {
+      width: min(1100px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 2rem 0 4rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    header {
+      display: grid;
+      gap: 0.75rem;
+      margin-bottom: 1.75rem;
+      animation: rise 0.55s ease both;
+    }
+
+    .brand {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: clamp(2.4rem, 6vw, 3.6rem);
+      letter-spacing: -0.04em;
+      line-height: 0.95;
+      margin: 0;
+    }
+
+    .brand span { color: var(--accent); }
+
+    .lead {
+      margin: 0;
+      max-width: 46rem;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.5;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(26, 46, 36, 0.92), rgba(14, 24, 20, 0.92));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.1rem;
+      animation: rise 0.65s ease both;
+    }
+
+    .panel + .panel { margin-top: 1rem; }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: end;
+    }
+
+    .field {
+      display: grid;
+      gap: 0.35rem;
+      flex: 1 1 140px;
+    }
+
+    label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    input, select, button, textarea {
+      font: inherit;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: rgba(0, 0, 0, 0.28);
+      color: var(--ink);
+      border-radius: 12px;
+      padding: 0.78rem 0.9rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: rgba(200, 245, 96, 0.65);
+      box-shadow: 0 0 0 3px rgba(200, 245, 96, 0.15);
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 0.82rem 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s ease, filter 0.15s ease, background 0.15s ease;
+    }
+
+    .btn:active { transform: translateY(1px) scale(0.98); }
+    .btn-primary {
+      background: var(--accent);
+      color: var(--accent-ink);
+    }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.04); }
+    .btn-danger {
+      background: rgba(255, 122, 122, 0.12);
+      color: var(--danger);
+      border: 1px solid rgba(255, 122, 122, 0.35);
+    }
+
+    .modes {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.9rem;
+    }
+
+    .mode {
+      text-align: left;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,0.22);
+      border-radius: 14px;
+      padding: 0.9rem 1rem;
+      cursor: pointer;
+      color: inherit;
+      transition: border-color 0.2s, background 0.2s, transform 0.2s;
+    }
+
+    .mode:hover { transform: translateY(-1px); }
+    .mode.active {
+      border-color: rgba(200, 245, 96, 0.7);
+      background: rgba(200, 245, 96, 0.08);
+    }
+    .mode strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      margin-bottom: 0.25rem;
+    }
+    .mode p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }
+
+    .matches { display: grid; gap: 0.8rem; margin-top: 1rem; }
+
+    .match {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 0.9rem;
+      background: rgba(0,0,0,0.18);
+      animation: rise 0.4s ease both;
+    }
+
+    .match.is-anchor {
+      border-color: rgba(200, 245, 96, 0.55);
+      box-shadow: inset 0 0 0 1px rgba(200, 245, 96, 0.15);
+    }
+
+    .match-top {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    .match-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .vs {
+      color: var(--muted);
+      font-weight: 600;
+      padding: 0 0.2rem;
+    }
+
+    .outcomes {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+
+    .outcome {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.65rem;
+      background: rgba(255,255,255,0.02);
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .outcome.on {
+      border-color: rgba(200, 245, 96, 0.55);
+      background: rgba(200, 245, 96, 0.08);
+    }
+
+    .outcome-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.4rem;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2rem;
+      height: 1.7rem;
+      padding: 0 0.55rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .outcome.on .chip { background: var(--accent); color: var(--accent-ink); }
+
+    .toggle {
+      appearance: none;
+      width: 1.15rem;
+      height: 1.15rem;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: transparent;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      margin: 0;
+    }
+    .toggle:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .toggle:checked::after {
+      content: "";
+      width: 0.35rem;
+      height: 0.6rem;
+      border: solid var(--accent-ink);
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg) translate(-1px, -1px);
+    }
+
+    .outcome input[type="number"] {
+      padding: 0.5rem 0.6rem;
+      border-radius: 10px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .match-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      align-items: center;
+    }
+
+    .anchor-btn {
+      font-size: 0.85rem;
+      padding: 0.55rem 0.8rem;
+    }
+
+    .anchor-btn.active {
+      background: var(--accent);
+      color: var(--accent-ink);
+      border-color: transparent;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.4;
+      margin: 0.85rem 0 0;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 1rem;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.8rem;
+      background: rgba(0,0,0,0.2);
+    }
+    .stat .k {
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      font-weight: 600;
+    }
+    .stat .v {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      margin-top: 0.2rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tickets {
+      display: grid;
+      gap: 0.65rem;
+      margin-top: 1rem;
+    }
+
+    .ticket {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.85rem 0.95rem;
+      background: rgba(0,0,0,0.22);
+      display: grid;
+      gap: 0.55rem;
+      animation: rise 0.35s ease both;
+    }
+
+    .ticket-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      align-items: baseline;
+    }
+
+    .ticket-head strong {
+      font-family: var(--font-display);
+      font-size: 1rem;
+    }
+
+    .ticket-meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ticket-meta b { color: var(--accent); font-weight: 700; }
+
+    .legs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .leg {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.35rem 0.65rem;
+      font-size: 0.84rem;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .leg.anchor-leg {
+      border-color: rgba(200, 245, 96, 0.5);
+      background: rgba(200, 245, 96, 0.1);
+    }
+
+    .empty {
+      color: var(--muted);
+      padding: 1.2rem 0.2rem;
+      text-align: center;
+    }
+
+    .warn {
+      margin-top: 0.8rem;
+      color: var(--warn);
+      font-size: 0.9rem;
+    }
+
+    .footer-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 800px) {
+      .modes, .stats, .outcomes { grid-template-columns: 1fr; }
+      .outcomes { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1 class="brand">Desdobra<span>.</span></h1>
+      <p class="lead">
+        Coloque os jogos, marque <strong>1 / X / 2</strong> e gere o desdobramento.
+        Modo clássico cobre todos os resultados marcados; modo âncora monta triplas com uma fixa.
+      </p>
+    </header>
+
+    <section class="panel">
+      <div class="row">
+        <div class="field">
+          <label for="home">Time casa</label>
+          <input id="home" type="text" placeholder="Ex: Flamengo" />
+        </div>
+        <div class="field">
+          <label for="away">Time fora</label>
+          <input id="away" type="text" placeholder="Ex: Palmeiras" />
+        </div>
+        <button class="btn btn-primary" id="addMatch" type="button">Adicionar jogo</button>
+      </div>
+
+      <div class="modes" role="radiogroup" aria-label="Modo de desdobramento">
+        <button class="mode active" type="button" data-mode="completo">
+          <strong>Completo 1X2</strong>
+          <p>Como o outro sistema: marca casa, empate e/ou fora e gera todas as combinações.</p>
+        </button>
+        <button class="mode" type="button" data-mode="ancora">
+          <strong>Âncora + Triplas</strong>
+          <p>1 fixa em todos os bilhetes + desdobro curto em triplas (formato mais estável).</p>
+        </button>
+      </div>
+
+      <div class="row" style="margin-top: 0.9rem;">
+        <div class="field">
+          <label for="stake">Stake do pacote (R$)</label>
+          <input id="stake" type="number" min="0" step="0.01" value="20" />
+        </div>
+        <div class="field" id="legsField" hidden>
+          <label for="legsPerTicket">Pernas por bilhete</label>
+          <select id="legsPerTicket">
+            <option value="3" selected>3 (tripla)</option>
+            <option value="4">4 (quadra)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="maxTickets">Limite de bilhetes</label>
+          <input id="maxTickets" type="number" min="1" step="1" value="64" />
+        </div>
+        <button class="btn btn-ghost" id="clearAll" type="button">Limpar jogos</button>
+      </div>
+
+      <p class="hint" id="modeHint">
+        Modo completo: em cada jogo marque um ou mais resultados (1, X, 2) e opcionalmente as odds.
+        Total de bilhetes = produto das opções marcadas.
+      </p>
+
+      <div class="matches" id="matches"></div>
+    </section>
+
+    <section class="panel">
+      <div class="row" style="justify-content: space-between; align-items: center;">
+        <div>
+          <strong style="font-family: var(--font-display); font-size: 1.25rem;">Bilhetes gerados</strong>
+          <p class="hint" style="margin-top: 0.25rem;">Atualiza na hora conforme você marca os resultados.</p>
+        </div>
+        <div class="footer-actions" style="margin-top: 0;">
+          <button class="btn btn-ghost" id="copyTickets" type="button">Copiar bilhetes</button>
+          <button class="btn btn-primary" id="exportCsv" type="button">Exportar CSV</button>
+        </div>
+      </div>
+
+      <div class="stats" id="stats">
+        <div class="stat"><div class="k">Jogos</div><div class="v" id="statMatches">0</div></div>
+        <div class="stat"><div class="k">Bilhetes</div><div class="v" id="statTickets">0</div></div>
+        <div class="stat"><div class="k">Stake / bilhete</div><div class="v" id="statUnit">R$ 0,00</div></div>
+        <div class="stat"><div class="k">Retorno máx.</div><div class="v" id="statMax">R$ 0,00</div></div>
+      </div>
+
+      <p class="warn" id="warn" hidden></p>
+      <div class="tickets" id="tickets">
+        <div class="empty">Adicione jogos e marque 1 / X / 2 para desdobrar.</div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const OUTCOMES = [
+      { key: "1", label: "Casa" },
+      { key: "X", label: "Empate" },
+      { key: "2", label: "Fora" },
+    ];
+
+    const state = {
+      mode: "completo",
+      matches: [],
+      anchorId: null,
+    };
+
+    const els = {
+      home: document.getElementById("home"),
+      away: document.getElementById("away"),
+      addMatch: document.getElementById("addMatch"),
+      clearAll: document.getElementById("clearAll"),
+      matches: document.getElementById("matches"),
+      stake: document.getElementById("stake"),
+      maxTickets: document.getElementById("maxTickets"),
+      legsPerTicket: document.getElementById("legsPerTicket"),
+      legsField: document.getElementById("legsField"),
+      modeHint: document.getElementById("modeHint"),
+      tickets: document.getElementById("tickets"),
+      warn: document.getElementById("warn"),
+      statMatches: document.getElementById("statMatches"),
+      statTickets: document.getElementById("statTickets"),
+      statUnit: document.getElementById("statUnit"),
+      statMax: document.getElementById("statMax"),
+      copyTickets: document.getElementById("copyTickets"),
+      exportCsv: document.getElementById("exportCsv"),
+      modes: [...document.querySelectorAll(".mode")],
+    };
+
+    function uid() {
+      return Math.random().toString(36).slice(2, 9);
+    }
+
+    function money(n) {
+      return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    }
+
+    function parseOdd(v) {
+      const n = Number(String(v).replace(",", "."));
+      return Number.isFinite(n) && n > 1 ? n : null;
+    }
+
+    function selectedOutcomes(match) {
+      return OUTCOMES
+        .filter((o) => match.selected[o.key])
+        .map((o) => ({
+          key: o.key,
+          label: o.label,
+          odd: parseOdd(match.odds[o.key]),
+        }));
+    }
+
+    function cartesian(arrays) {
+      return arrays.reduce(
+        (acc, curr) => acc.flatMap((a) => curr.map((b) => [...a, b])),
+        [[]]
+      );
+    }
+
+    function combinations(arr, k) {
+      if (k < 0 || k > arr.length) return [];
+      if (k === 0) return [[]];
+      if (k === arr.length) return [arr.slice()];
+      const out = [];
+      const walk = (start, path) => {
+        if (path.length === k) {
+          out.push(path.slice());
+          return;
+        }
+        for (let i = start; i < arr.length; i++) {
+          path.push(arr[i]);
+          walk(i + 1, path);
+          path.pop();
+        }
+      };
+      walk(0, []);
+      return out;
+    }
+
+    function ticketOdd(legs) {
+      if (legs.some((l) => !l.odd)) return null;
+      return legs.reduce((acc, l) => acc * l.odd, 1);
+    }
+
+    function buildCompleto() {
+      const pools = state.matches.map((m) => {
+        const opts = selectedOutcomes(m);
+        return opts.map((o) => ({
+          matchId: m.id,
+          home: m.home,
+          away: m.away,
+          result: o.key,
+          resultLabel: o.label,
+          odd: o.odd,
+          isAnchor: false,
+        }));
+      });
+
+      if (!pools.length || pools.some((p) => !p.length)) {
+        return { tickets: [], warning: pools.length ? "Marque pelo menos 1 resultado em cada jogo." : "" };
+      }
+
+      const max = Number(els.maxTickets.value) || 64;
+      const total = pools.reduce((acc, p) => acc * p.length, 1);
+      if (total > max) {
+        return {
+          tickets: [],
+          warning: `Esse marcação gera ${total} bilhetes (acima do limite ${max}). Reduza opções 1/X/2 ou aumente o limite.`,
+        };
+      }
+
+      const combos = cartesian(pools);
+      const tickets = combos.map((legs, i) => ({
+        id: i + 1,
+        legs,
+        odd: ticketOdd(legs),
+      }));
+      return { tickets, warning: "" };
+    }
+
+    function buildAncora() {
+      if (!state.matches.length) return { tickets: [], warning: "" };
+      if (!state.anchorId) {
+        return { tickets: [], warning: "Escolha 1 jogo âncora (fixa)." };
+      }
+
+      const anchorMatch = state.matches.find((m) => m.id === state.anchorId);
+      const anchorOpts = selectedOutcomes(anchorMatch);
+      if (anchorOpts.length !== 1) {
+        return {
+          tickets: [],
+          warning: "Na âncora, marque exatamente 1 resultado (1 ou X ou 2).",
+        };
+      }
+
+      const anchorLeg = {
+        matchId: anchorMatch.id,
+        home: anchorMatch.home,
+        away: anchorMatch.away,
+        result: anchorOpts[0].key,
+        resultLabel: anchorOpts[0].label,
+        odd: anchorOpts[0].odd,
+        isAnchor: true,
+      };
+
+      const variableMatches = state.matches.filter((m) => m.id !== state.anchorId);
+      const variablePools = variableMatches.map((m) => {
+        const opts = selectedOutcomes(m);
+        return opts.map((o) => ({
+          matchId: m.id,
+          home: m.home,
+          away: m.away,
+          result: o.key,
+          resultLabel: o.label,
+          odd: o.odd,
+          isAnchor: false,
+        }));
+      });
+
+      if (variablePools.some((p) => !p.length)) {
+        return { tickets: [], warning: "Marque pelo menos 1 resultado em cada jogo variável." };
+      }
+
+      // Expand each variable match into concrete legs, then choose combinations of matches.
+      const legsNeeded = Number(els.legsPerTicket.value) || 3;
+      const varsNeeded = legsNeeded - 1;
+      if (variablePools.length < varsNeeded) {
+        return {
+          tickets: [],
+          warning: `Para bilhetes de ${legsNeeded} pernas com 1 âncora, você precisa de pelo menos ${varsNeeded} jogos variáveis.`,
+        };
+      }
+
+      const matchCombos = combinations(
+        variablePools.map((_, idx) => idx),
+        varsNeeded
+      );
+
+      let tickets = [];
+      for (const idxs of matchCombos) {
+        const chosenPools = idxs.map((i) => variablePools[i]);
+        const expanded = cartesian(chosenPools);
+        for (const vars of expanded) {
+          tickets.push({
+            id: tickets.length + 1,
+            legs: [anchorLeg, ...vars],
+            odd: ticketOdd([anchorLeg, ...vars]),
+          });
+        }
+      }
+
+      const max = Number(els.maxTickets.value) || 64;
+      if (tickets.length > max) {
+        return {
+          tickets: [],
+          warning: `Esse pacote gera ${tickets.length} bilhetes (acima do limite ${max}). Reduza jogos/opções ou aumente o limite.`,
+        };
+      }
+
+      return { tickets, warning: "" };
+    }
+
+    function generate() {
+      return state.mode === "completo" ? buildCompleto() : buildAncora();
+    }
+
+    function renderMatches() {
+      if (!state.matches.length) {
+        els.matches.innerHTML = `<div class="empty">Nenhum jogo ainda. Adicione casa x fora acima.</div>`;
+        return;
+      }
+
+      els.matches.innerHTML = state.matches.map((m, index) => {
+        const isAnchor = state.anchorId === m.id;
+        const outcomeHtml = OUTCOMES.map((o) => {
+          const on = !!m.selected[o.key];
+          return `
+            <div class="outcome ${on ? "on" : ""}" data-match="${m.id}" data-outcome="${o.key}">
+              <div class="outcome-head">
+                <span class="chip">${o.key}</span>
+                <input class="toggle" type="checkbox" ${on ? "checked" : ""} data-act="toggle" data-match="${m.id}" data-outcome="${o.key}" aria-label="${o.label}" />
+              </div>
+              <div style="font-size:0.82rem;color:var(--muted);">${o.label}</div>
+              <input type="number" min="1.01" step="0.01" placeholder="Odd" value="${m.odds[o.key] ?? ""}" data-act="odd" data-match="${m.id}" data-outcome="${o.key}" />
+            </div>
+          `;
+        }).join("");
+
+        return `
+          <article class="match ${isAnchor ? "is-anchor" : ""}" data-id="${m.id}">
+            <div class="match-top">
+              <div class="match-title">
+                ${index + 1}. ${escapeHtml(m.home)} <span class="vs">x</span> ${escapeHtml(m.away)}
+              </div>
+              <button class="btn btn-danger" type="button" data-act="remove" data-match="${m.id}">Remover</button>
+            </div>
+            <div class="outcomes">${outcomeHtml}</div>
+            <div class="match-actions">
+              <button class="btn btn-ghost anchor-btn ${isAnchor ? "active" : ""}" type="button" data-act="anchor" data-match="${m.id}" ${state.mode !== "ancora" ? "hidden" : ""}>
+                ${isAnchor ? "Âncora selecionada" : "Usar como âncora"}
+              </button>
+              <span class="hint" style="margin:0;">Marque casa, empate e/ou fora — o sistema desdobra automaticamente.</span>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function renderTickets() {
+      const { tickets, warning } = generate();
+      const stake = Number(els.stake.value) || 0;
+      const unit = tickets.length ? stake / tickets.length : 0;
+      const maxReturn = tickets.reduce((acc, t) => {
+        if (t.odd == null) return acc;
+        return Math.max(acc, unit * t.odd);
+      }, 0);
+
+      els.statMatches.textContent = String(state.matches.length);
+      els.statTickets.textContent = String(tickets.length);
+      els.statUnit.textContent = money(unit || 0);
+      els.statMax.textContent = tickets.some((t) => t.odd != null) ? money(maxReturn) : "—";
+
+      if (warning) {
+        els.warn.hidden = false;
+        els.warn.textContent = warning;
+      } else {
+        els.warn.hidden = true;
+        els.warn.textContent = "";
+      }
+
+      if (!tickets.length) {
+        els.tickets.innerHTML = `<div class="empty">${warning || "Adicione jogos e marque 1 / X / 2 para desdobrar."}</div>`;
+        window.__lastTickets = [];
+        return;
+      }
+
+      els.tickets.innerHTML = tickets.map((t) => {
+        const oddTxt = t.odd != null ? t.odd.toFixed(2) : "sem odds";
+        const retorno = t.odd != null ? money(unit * t.odd) : "—";
+        const legs = t.legs.map((l) => {
+          const odd = l.odd != null ? ` @ ${l.odd}` : "";
+          return `<span class="leg ${l.isAnchor ? "anchor-leg" : ""}">${escapeHtml(l.home)} x ${escapeHtml(l.away)} → <b>${l.result}</b>${odd}</span>`;
+        }).join("");
+
+        return `
+          <article class="ticket">
+            <div class="ticket-head">
+              <strong>Bilhete #${t.id}</strong>
+              <div class="ticket-meta">
+                Stake <b>${money(unit)}</b> · Odd <b>${oddTxt}</b> · Retorno <b>${retorno}</b>
+              </div>
+            </div>
+            <div class="legs">${legs}</div>
+          </article>
+        `;
+      }).join("");
+
+      window.__lastTickets = tickets.map((t) => ({ ...t, unit }));
+    }
+
+    function renderAll() {
+      const ancora = state.mode === "ancora";
+      els.legsField.hidden = !ancora;
+      els.modeHint.textContent = ancora
+        ? "Modo âncora: escolha 1 jogo fixo com exatamente 1 resultado. Nos outros, marque 1/X/2. O sistema monta triplas/quadras sempre com a âncora."
+        : "Modo completo: em cada jogo marque um ou mais resultados (1, X, 2) e opcionalmente as odds. Total de bilhetes = produto das opções marcadas.";
+      renderMatches();
+      renderTickets();
+    }
+
+    function addMatch() {
+      const home = els.home.value.trim();
+      const away = els.away.value.trim();
+      if (!home || !away) {
+        els.home.focus();
+        return;
+      }
+      state.matches.push({
+        id: uid(),
+        home,
+        away,
+        selected: { "1": true, X: false, "2": false },
+        odds: { "1": "", X: "", "2": "" },
+      });
+      els.home.value = "";
+      els.away.value = "";
+      els.home.focus();
+      renderAll();
+    }
+
+    els.addMatch.addEventListener("click", addMatch);
+    [els.home, els.away].forEach((el) => {
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") addMatch();
+      });
+    });
+
+    els.clearAll.addEventListener("click", () => {
+      state.matches = [];
+      state.anchorId = null;
+      renderAll();
+    });
+
+    els.modes.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        state.mode = btn.dataset.mode;
+        els.modes.forEach((b) => b.classList.toggle("active", b === btn));
+        if (state.mode !== "ancora") state.anchorId = null;
+        renderAll();
+      });
+    });
+
+    ["input", "change"].forEach((evt) => {
+      els.stake.addEventListener(evt, renderTickets);
+      els.maxTickets.addEventListener(evt, renderTickets);
+      els.legsPerTicket.addEventListener(evt, renderTickets);
+    });
+
+    els.matches.addEventListener("click", (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLElement)) return;
+      const act = t.dataset.act;
+      const matchId = t.dataset.match;
+      if (!act || !matchId) return;
+
+      const match = state.matches.find((m) => m.id === matchId);
+      if (!match) return;
+
+      if (act === "remove") {
+        state.matches = state.matches.filter((m) => m.id !== matchId);
+        if (state.anchorId === matchId) state.anchorId = null;
+        renderAll();
+        return;
+      }
+
+      if (act === "toggle") {
+        const key = t.dataset.outcome;
+        match.selected[key] = !match.selected[key];
+        renderAll();
+        return;
+      }
+
+      if (act === "anchor") {
+        state.anchorId = state.anchorId === matchId ? null : matchId;
+        // Âncora deve ter só 1 resultado marcado: se tiver vários, mantém o primeiro marcado.
+        const selected = OUTCOMES.filter((o) => match.selected[o.key]);
+        if (selected.length !== 1 && selected.length > 0) {
+          const keep = selected[0].key;
+          OUTCOMES.forEach((o) => { match.selected[o.key] = o.key === keep; });
+        }
+        renderAll();
+      }
+    });
+
+    els.matches.addEventListener("input", (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLInputElement)) return;
+      if (t.dataset.act !== "odd") return;
+      const match = state.matches.find((m) => m.id === t.dataset.match);
+      if (!match) return;
+      match.odds[t.dataset.outcome] = t.value;
+      renderTickets();
+    });
+
+    function ticketsToText() {
+      const tickets = window.__lastTickets || [];
+      if (!tickets.length) return "";
+      return tickets.map((t) => {
+        const oddTxt = t.odd != null ? t.odd.toFixed(2) : "sem odds";
+        const legs = t.legs
+          .map((l) => `${l.home} x ${l.away} = ${l.result}${l.odd != null ? ` (${l.odd})` : ""}${l.isAnchor ? " [ÂNCORA]" : ""}`)
+          .join(" | ");
+        return `#${t.id} | stake ${money(t.unit)} | odd ${oddTxt} | ${legs}`;
+      }).join("\n");
+    }
+
+    els.copyTickets.addEventListener("click", async () => {
+      const text = ticketsToText();
+      if (!text) return;
+      await navigator.clipboard.writeText(text);
+      els.copyTickets.textContent = "Copiado!";
+      setTimeout(() => { els.copyTickets.textContent = "Copiar bilhetes"; }, 1200);
+    });
+
+    els.exportCsv.addEventListener("click", () => {
+      const tickets = window.__lastTickets || [];
+      if (!tickets.length) return;
+      const rows = [["bilhete", "stake", "odd_total", "retorno_potencial", "pernas"]];
+      for (const t of tickets) {
+        const odd = t.odd != null ? t.odd.toFixed(4) : "";
+        const retorno = t.odd != null ? (t.unit * t.odd).toFixed(2) : "";
+        const pernas = t.legs
+          .map((l) => `${l.home} x ${l.away}:${l.result}${l.odd != null ? `@${l.odd}` : ""}`)
+          .join(" / ");
+        rows.push([t.id, t.unit.toFixed(2), odd, retorno, pernas]);
+      }
+      const csv = rows.map((r) => r.map((c) => `"${String(c).replaceAll('"', '""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "desdobramento.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Exemplos iniciais pra já entender o fluxo
+    state.matches = [
+      {
+        id: uid(),
+        home: "Porto",
+        away: "Braga",
+        selected: { "1": true, X: false, "2": false },
+        odds: { "1": "1.72", X: "3.40", "2": "4.50" },
+      },
+      {
+        id: uid(),
+        home: "Ajax",
+        away: "Feyenoord",
+        selected: { "1": true, X: true, "2": false },
+        odds: { "1": "2.10", X: "3.30", "2": "3.20" },
+      },
+      {
+        id: uid(),
+        home: "Leipzig",
+        away: "Stuttgart",
+        selected: { "1": true, X: false, "2": true },
+        odds: { "1": "1.95", X: "3.50", "2": "3.60" },
+      },
+    ];
+
+    renderAll();
+  </script>
+</body>
+</html>
