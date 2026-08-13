@@ -339,7 +339,7 @@
 
     .stats {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 0.65rem;
       margin-top: 1rem;
     }
@@ -432,11 +432,150 @@
       font-size: 0.9rem;
     }
 
+    .warn.danger { color: var(--danger); }
+    .warn.ok { color: var(--ok); }
+
     .footer-actions {
       display: flex;
       flex-wrap: wrap;
       gap: 0.6rem;
       margin-top: 1rem;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+      margin-top: 0.9rem;
+    }
+
+    .legend-item {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.65rem 0.75rem;
+      background: rgba(0,0,0,0.18);
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+
+    .legend-item strong {
+      display: block;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 0.15rem;
+    }
+
+    .odd-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-top: 0.15rem;
+      padding: 0.2rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      border: 1px solid transparent;
+      width: fit-content;
+      max-width: 100%;
+    }
+
+    .odd-tag.extreme {
+      color: #ffd0d0;
+      background: rgba(255, 122, 122, 0.14);
+      border-color: rgba(255, 122, 122, 0.35);
+    }
+    .odd-tag.super {
+      color: #ffd9a8;
+      background: rgba(255, 180, 84, 0.14);
+      border-color: rgba(255, 180, 84, 0.35);
+    }
+    .odd-tag.strong {
+      color: #d9f7a8;
+      background: rgba(200, 245, 96, 0.12);
+      border-color: rgba(200, 245, 96, 0.35);
+    }
+    .odd-tag.moderate {
+      color: #b8f0d4;
+      background: rgba(109, 255, 176, 0.1);
+      border-color: rgba(109, 255, 176, 0.3);
+    }
+    .odd-tag.light {
+      color: #cfe3ff;
+      background: rgba(140, 180, 255, 0.12);
+      border-color: rgba(140, 180, 255, 0.3);
+    }
+    .odd-tag.under {
+      color: #e7d4ff;
+      background: rgba(190, 150, 255, 0.12);
+      border-color: rgba(190, 150, 255, 0.3);
+    }
+
+    .advice-box {
+      margin-top: 0.85rem;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.8rem 0.9rem;
+      background: rgba(0,0,0,0.22);
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .advice-box .title {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+    }
+
+    .advice-box .msg { color: var(--muted); font-size: 0.88rem; line-height: 1.4; }
+    .advice-box.good { border-color: rgba(109, 255, 176, 0.4); }
+    .advice-box.caution { border-color: rgba(255, 180, 84, 0.45); }
+    .advice-box.bad { border-color: rgba(255, 122, 122, 0.45); }
+
+    .checkline {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      margin-top: 0.75rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .checkline input {
+      width: 1.15rem;
+      height: 1.15rem;
+      accent-color: var(--accent);
+    }
+
+    .ticket.covers {
+      border-color: rgba(109, 255, 176, 0.35);
+    }
+
+    .ticket.no-cover {
+      border-color: rgba(255, 122, 122, 0.28);
+    }
+
+    .cover-pill {
+      display: inline-flex;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-left: 0.35rem;
+    }
+    .cover-pill.yes {
+      background: rgba(109, 255, 176, 0.15);
+      color: var(--ok);
+    }
+    .cover-pill.no {
+      background: rgba(255, 122, 122, 0.12);
+      color: var(--danger);
+    }
+
+    .anchor-meta {
+      margin-top: 0.55rem;
+      font-size: 0.84rem;
+      color: var(--muted);
     }
 
     @keyframes rise {
@@ -445,7 +584,7 @@
     }
 
     @media (max-width: 800px) {
-      .modes, .stats, .outcomes { grid-template-columns: 1fr; }
+      .modes, .stats, .outcomes, .legend { grid-template-columns: 1fr; }
       .outcomes { grid-template-columns: 1fr; }
     }
   </style>
@@ -456,9 +595,36 @@
       <h1 class="brand">Desdobra<span>.</span></h1>
       <p class="lead">
         Coloque os jogos, marque <strong>1 / X / 2</strong> e gere o desdobramento.
-        Modo clássico cobre todos os resultados marcados; modo âncora monta triplas com uma fixa.
+        O sistema classifica a odd (super favorito, favorito forte, etc.) e avisa se a âncora está fora da zona boa.
       </p>
     </header>
+
+    <section class="panel">
+      <strong style="font-family: var(--font-display); font-size: 1.15rem;">Esquema de odds</strong>
+      <p class="hint" style="margin-top: 0.35rem;">
+        Âncora ideal: <b style="color: var(--accent);">1.50 – 1.85</b>.
+        Abaixo de 1.40 come o pacote; acima de 2.20 já é seleção normal, não fixa.
+      </p>
+      <div class="legend" id="oddLegend"></div>
+      <div class="row" style="margin-top: 0.85rem;">
+        <div class="field">
+          <label for="minAnchorOdd">Âncora mínima</label>
+          <input id="minAnchorOdd" type="number" min="1.01" step="0.01" value="1.50" />
+        </div>
+        <div class="field">
+          <label for="maxAnchorOdd">Âncora máxima ideal</label>
+          <input id="maxAnchorOdd" type="number" min="1.01" step="0.01" value="1.85" />
+        </div>
+        <div class="field">
+          <label for="blockBelow">Bloquear abaixo de</label>
+          <input id="blockBelow" type="number" min="1.01" step="0.01" value="1.40" />
+        </div>
+      </div>
+      <label class="checkline">
+        <input id="enforceAnchorBand" type="checkbox" checked />
+        Bloquear geração se a âncora estiver abaixo do mínimo de bloqueio
+      </label>
+    </section>
 
     <section class="panel">
       <div class="row">
@@ -508,6 +674,7 @@
         Total de bilhetes = produto das opções marcadas.
       </p>
 
+      <div id="anchorAdvice" class="advice-box" hidden></div>
       <div class="matches" id="matches"></div>
     </section>
 
@@ -528,9 +695,12 @@
         <div class="stat"><div class="k">Bilhetes</div><div class="v" id="statTickets">0</div></div>
         <div class="stat"><div class="k">Stake / bilhete</div><div class="v" id="statUnit">R$ 0,00</div></div>
         <div class="stat"><div class="k">Retorno máx.</div><div class="v" id="statMax">R$ 0,00</div></div>
+        <div class="stat"><div class="k">Odd p/ empatar</div><div class="v" id="statBe">—</div></div>
+        <div class="stat"><div class="k">Bilhetes que cobrem</div><div class="v" id="statCover">0</div></div>
       </div>
 
       <p class="warn" id="warn" hidden></p>
+      <div id="packageAdvice" class="advice-box" hidden></div>
       <div class="tickets" id="tickets">
         <div class="empty">Adicione jogos e marque 1 / X / 2 para desdobrar.</div>
       </div>
@@ -542,6 +712,15 @@
       { key: "1", label: "Casa" },
       { key: "X", label: "Empate" },
       { key: "2", label: "Fora" },
+    ];
+
+    const ODD_BANDS = [
+      { id: "extreme", min: 1.01, max: 1.20, label: "Super favorito extremo", tip: "Acerta muito, lucra pouco. Evite como âncora.", cls: "extreme" },
+      { id: "super", min: 1.21, max: 1.40, label: "Super favorito", tip: "Come o payout do pacote. Não use como fixa.", cls: "super" },
+      { id: "strong", min: 1.41, max: 1.70, label: "Favorito forte", tip: "Zona boa de âncora (principalmente 1.50–1.70).", cls: "strong" },
+      { id: "moderate", min: 1.71, max: 2.00, label: "Favorito moderado", tip: "Âncora aceitável até ~1.85 com tese.", cls: "moderate" },
+      { id: "light", min: 2.01, max: 2.40, label: "Favorito leve", tip: "Mais seleção normal do que fixa.", cls: "light" },
+      { id: "under", min: 2.41, max: 99, label: "Equilíbrio / zebra", tip: "Não trate como âncora; use single ou variável.", cls: "under" },
     ];
 
     const state = {
@@ -563,10 +742,19 @@
       modeHint: document.getElementById("modeHint"),
       tickets: document.getElementById("tickets"),
       warn: document.getElementById("warn"),
+      oddLegend: document.getElementById("oddLegend"),
+      minAnchorOdd: document.getElementById("minAnchorOdd"),
+      maxAnchorOdd: document.getElementById("maxAnchorOdd"),
+      blockBelow: document.getElementById("blockBelow"),
+      enforceAnchorBand: document.getElementById("enforceAnchorBand"),
+      anchorAdvice: document.getElementById("anchorAdvice"),
+      packageAdvice: document.getElementById("packageAdvice"),
       statMatches: document.getElementById("statMatches"),
       statTickets: document.getElementById("statTickets"),
       statUnit: document.getElementById("statUnit"),
       statMax: document.getElementById("statMax"),
+      statBe: document.getElementById("statBe"),
+      statCover: document.getElementById("statCover"),
       copyTickets: document.getElementById("copyTickets"),
       exportCsv: document.getElementById("exportCsv"),
       modes: [...document.querySelectorAll(".mode")],
@@ -583,6 +771,91 @@
     function parseOdd(v) {
       const n = Number(String(v).replace(",", "."));
       return Number.isFinite(n) && n > 1 ? n : null;
+    }
+
+    function classifyOdd(odd) {
+      if (odd == null) return null;
+      return ODD_BANDS.find((b) => odd >= b.min && odd <= b.max) || ODD_BANDS[ODD_BANDS.length - 1];
+    }
+
+    function oddTagHtml(odd) {
+      const band = classifyOdd(odd);
+      if (!band) return `<span class="odd-tag" style="opacity:.45">sem odd</span>`;
+      const implied = ((1 / odd) * 100).toFixed(0);
+      return `<span class="odd-tag ${band.cls}" title="${band.tip}">${band.label} · ~${implied}%</span>`;
+    }
+
+    function renderOddLegend() {
+      els.oddLegend.innerHTML = ODD_BANDS.map((b) => {
+        const range = b.max >= 99 ? `${b.min.toFixed(2)}+` : `${b.min.toFixed(2)} – ${b.max.toFixed(2)}`;
+        return `
+          <div class="legend-item">
+            <strong class="odd-tag ${b.cls}" style="margin-bottom:0.35rem;">${b.label}</strong>
+            <div>${range}</div>
+            <div style="color:var(--muted); margin-top:0.2rem;">${b.tip}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function getAnchorConfig() {
+      return {
+        minIdeal: parseOdd(els.minAnchorOdd.value) || 1.5,
+        maxIdeal: parseOdd(els.maxAnchorOdd.value) || 1.85,
+        blockBelow: parseOdd(els.blockBelow.value) || 1.4,
+        enforce: !!els.enforceAnchorBand.checked,
+      };
+    }
+
+    function evaluateAnchor(odd) {
+      const cfg = getAnchorConfig();
+      if (odd == null) {
+        return {
+          level: "caution",
+          title: "Âncora sem odd",
+          msg: "Preencha a odd da fixa para validar a faixa (ideal 1.50–1.85).",
+          blocked: false,
+        };
+      }
+      const band = classifyOdd(odd);
+      if (odd < cfg.blockBelow) {
+        return {
+          level: "bad",
+          title: `Âncora bloqueada · ${band.label} (${odd.toFixed(2)})`,
+          msg: `Odd abaixo de ${cfg.blockBelow.toFixed(2)} come o payout. Troque a fixa ou use single. Zona ideal: ${cfg.minIdeal.toFixed(2)}–${cfg.maxIdeal.toFixed(2)}.`,
+          blocked: cfg.enforce,
+        };
+      }
+      if (odd < cfg.minIdeal) {
+        return {
+          level: "caution",
+          title: `Âncora fraca · ${band.label} (${odd.toFixed(2)})`,
+          msg: `Acima do bloqueio, mas abaixo do mínimo ideal (${cfg.minIdeal.toFixed(2)}). Pacote tende a lucrar pouco no cenário mais comum.`,
+          blocked: false,
+        };
+      }
+      if (odd <= cfg.maxIdeal) {
+        return {
+          level: "good",
+          title: `Âncora na zona boa · ${band.label} (${odd.toFixed(2)})`,
+          msg: `Faixa ideal para fixa de desdobro (${cfg.minIdeal.toFixed(2)}–${cfg.maxIdeal.toFixed(2)}). Ainda assim, se cair, zera o pacote.`,
+          blocked: false,
+        };
+      }
+      if (odd <= 2.2) {
+        return {
+          level: "caution",
+          title: `Âncora alta · ${band.label} (${odd.toFixed(2)})`,
+          msg: "Paga melhor, mas falha mais. Só mantenha se a tip tiver motivo forte.",
+          blocked: false,
+        };
+      }
+      return {
+        level: "bad",
+        title: `Isso não é âncora · ${band.label} (${odd.toFixed(2)})`,
+        msg: "Acima de 2.20 trate como seleção normal/variável, não como fixa do pacote.",
+        blocked: false,
+      };
     }
 
     function selectedOutcomes(match) {
@@ -642,7 +915,7 @@
       });
 
       if (!pools.length || pools.some((p) => !p.length)) {
-        return { tickets: [], warning: pools.length ? "Marque pelo menos 1 resultado em cada jogo." : "" };
+        return { tickets: [], warning: pools.length ? "Marque pelo menos 1 resultado em cada jogo." : "", anchorEval: null };
       }
 
       const max = Number(els.maxTickets.value) || 64;
@@ -651,6 +924,7 @@
         return {
           tickets: [],
           warning: `Esse marcação gera ${total} bilhetes (acima do limite ${max}). Reduza opções 1/X/2 ou aumente o limite.`,
+          anchorEval: null,
         };
       }
 
@@ -660,13 +934,13 @@
         legs,
         odd: ticketOdd(legs),
       }));
-      return { tickets, warning: "" };
+      return { tickets, warning: "", anchorEval: null };
     }
 
     function buildAncora() {
-      if (!state.matches.length) return { tickets: [], warning: "" };
+      if (!state.matches.length) return { tickets: [], warning: "", anchorEval: null };
       if (!state.anchorId) {
-        return { tickets: [], warning: "Escolha 1 jogo âncora (fixa)." };
+        return { tickets: [], warning: "Escolha 1 jogo âncora (fixa).", anchorEval: null };
       }
 
       const anchorMatch = state.matches.find((m) => m.id === state.anchorId);
@@ -675,7 +949,13 @@
         return {
           tickets: [],
           warning: "Na âncora, marque exatamente 1 resultado (1 ou X ou 2).",
+          anchorEval: null,
         };
+      }
+
+      const anchorEval = evaluateAnchor(anchorOpts[0].odd);
+      if (anchorEval.blocked) {
+        return { tickets: [], warning: anchorEval.msg, anchorEval };
       }
 
       const anchorLeg = {
@@ -703,7 +983,7 @@
       });
 
       if (variablePools.some((p) => !p.length)) {
-        return { tickets: [], warning: "Marque pelo menos 1 resultado em cada jogo variável." };
+        return { tickets: [], warning: "Marque pelo menos 1 resultado em cada jogo variável.", anchorEval };
       }
 
       // Expand each variable match into concrete legs, then choose combinations of matches.
@@ -713,6 +993,7 @@
         return {
           tickets: [],
           warning: `Para bilhetes de ${legsNeeded} pernas com 1 âncora, você precisa de pelo menos ${varsNeeded} jogos variáveis.`,
+          anchorEval,
         };
       }
 
@@ -739,10 +1020,11 @@
         return {
           tickets: [],
           warning: `Esse pacote gera ${tickets.length} bilhetes (acima do limite ${max}). Reduza jogos/opções ou aumente o limite.`,
+          anchorEval,
         };
       }
 
-      return { tickets, warning: "" };
+      return { tickets, warning: "", anchorEval };
     }
 
     function generate() {
@@ -757,8 +1039,17 @@
 
       els.matches.innerHTML = state.matches.map((m, index) => {
         const isAnchor = state.anchorId === m.id;
+        let anchorMeta = "";
+        if (isAnchor && state.mode === "ancora") {
+          const opts = selectedOutcomes(m);
+          const odd = opts.length === 1 ? opts[0].odd : null;
+          const ev = evaluateAnchor(odd);
+          anchorMeta = `<div class="anchor-meta">${escapeHtml(ev.title)} — ${escapeHtml(ev.msg)}</div>`;
+        }
+
         const outcomeHtml = OUTCOMES.map((o) => {
           const on = !!m.selected[o.key];
+          const odd = parseOdd(m.odds[o.key]);
           return `
             <div class="outcome ${on ? "on" : ""}" data-match="${m.id}" data-outcome="${o.key}">
               <div class="outcome-head">
@@ -767,6 +1058,7 @@
               </div>
               <div style="font-size:0.82rem;color:var(--muted);">${o.label}</div>
               <input type="number" min="1.01" step="0.01" placeholder="Odd" value="${m.odds[o.key] ?? ""}" data-act="odd" data-match="${m.id}" data-outcome="${o.key}" />
+              ${oddTagHtml(odd)}
             </div>
           `;
         }).join("");
@@ -784,8 +1076,9 @@
               <button class="btn btn-ghost anchor-btn ${isAnchor ? "active" : ""}" type="button" data-act="anchor" data-match="${m.id}" ${state.mode !== "ancora" ? "hidden" : ""}>
                 ${isAnchor ? "Âncora selecionada" : "Usar como âncora"}
               </button>
-              <span class="hint" style="margin:0;">Marque casa, empate e/ou fora — o sistema desdobra automaticamente.</span>
+              <span class="hint" style="margin:0;">Marque casa, empate e/ou fora — o sistema classifica a odd na hora.</span>
             </div>
+            ${anchorMeta}
           </article>
         `;
       }).join("");
@@ -799,10 +1092,33 @@
         .replaceAll('"', "&quot;");
     }
 
+    function renderAnchorAdvice(anchorEval) {
+      if (state.mode !== "ancora" || !state.anchorId) {
+        els.anchorAdvice.hidden = true;
+        els.anchorAdvice.innerHTML = "";
+        return;
+      }
+      const ev = anchorEval || (() => {
+        const m = state.matches.find((x) => x.id === state.anchorId);
+        if (!m) return null;
+        const opts = selectedOutcomes(m);
+        return evaluateAnchor(opts.length === 1 ? opts[0].odd : null);
+      })();
+      if (!ev) {
+        els.anchorAdvice.hidden = true;
+        return;
+      }
+      els.anchorAdvice.hidden = false;
+      els.anchorAdvice.className = `advice-box ${ev.level === "good" ? "good" : ev.level === "bad" ? "bad" : "caution"}`;
+      els.anchorAdvice.innerHTML = `<div class="title">${escapeHtml(ev.title)}</div><div class="msg">${escapeHtml(ev.msg)}</div>`;
+    }
+
     function renderTickets() {
-      const { tickets, warning } = generate();
+      const { tickets, warning, anchorEval } = generate();
       const stake = Number(els.stake.value) || 0;
       const unit = tickets.length ? stake / tickets.length : 0;
+      const breakEvenOdd = tickets.length ? tickets.length : null;
+      const covering = tickets.filter((t) => t.odd != null && t.odd >= (breakEvenOdd || Infinity));
       const maxReturn = tickets.reduce((acc, t) => {
         if (t.odd == null) return acc;
         return Math.max(acc, unit * t.odd);
@@ -812,9 +1128,14 @@
       els.statTickets.textContent = String(tickets.length);
       els.statUnit.textContent = money(unit || 0);
       els.statMax.textContent = tickets.some((t) => t.odd != null) ? money(maxReturn) : "—";
+      els.statBe.textContent = breakEvenOdd != null ? breakEvenOdd.toFixed(2) : "—";
+      els.statCover.textContent = `${covering.length}/${tickets.length || 0}`;
+
+      renderAnchorAdvice(anchorEval);
 
       if (warning) {
         els.warn.hidden = false;
+        els.warn.className = `warn ${anchorEval && anchorEval.blocked ? "danger" : ""}`;
         els.warn.textContent = warning;
       } else {
         els.warn.hidden = true;
@@ -823,22 +1144,46 @@
 
       if (!tickets.length) {
         els.tickets.innerHTML = `<div class="empty">${warning || "Adicione jogos e marque 1 / X / 2 para desdobrar."}</div>`;
+        els.packageAdvice.hidden = true;
         window.__lastTickets = [];
         return;
+      }
+
+      if (tickets.some((t) => t.odd != null)) {
+        const coverCount = covering.length;
+        const level = coverCount === 0 ? "bad" : coverCount < tickets.length ? "caution" : "good";
+        els.packageAdvice.hidden = false;
+        els.packageAdvice.className = `advice-box ${level}`;
+        els.packageAdvice.innerHTML = `
+          <div class="title">Cobertura do pacote</div>
+          <div class="msg">
+            Com 1 bilhete green, precisa odd ≥ <b>${breakEvenOdd.toFixed(2)}</b> para empatar o stake do pacote.
+            Agora <b>${coverCount}</b> de <b>${tickets.length}</b> bilhetes cobrem o pacote sozinhos.
+            ${coverCount < tickets.length ? "Os bilhetes abaixo da linha aparecem em vermelho — green neles ainda pode dar prejuízo." : "Todos os bilhetes com odd já pagam o pacote se saírem sozinhos."}
+          </div>
+        `;
+      } else {
+        els.packageAdvice.hidden = true;
       }
 
       els.tickets.innerHTML = tickets.map((t) => {
         const oddTxt = t.odd != null ? t.odd.toFixed(2) : "sem odds";
         const retorno = t.odd != null ? money(unit * t.odd) : "—";
+        const covers = t.odd != null && t.odd >= breakEvenOdd;
+        const coverHtml = t.odd == null
+          ? ""
+          : `<span class="cover-pill ${covers ? "yes" : "no"}">${covers ? "cobre pacote" : "não cobre"}</span>`;
         const legs = t.legs.map((l) => {
           const odd = l.odd != null ? ` @ ${l.odd}` : "";
-          return `<span class="leg ${l.isAnchor ? "anchor-leg" : ""}">${escapeHtml(l.home)} x ${escapeHtml(l.away)} → <b>${l.result}</b>${odd}</span>`;
+          const band = classifyOdd(l.odd);
+          const bandTxt = band ? ` · ${band.label}` : "";
+          return `<span class="leg ${l.isAnchor ? "anchor-leg" : ""}">${escapeHtml(l.home)} x ${escapeHtml(l.away)} → <b>${l.result}</b>${odd}${l.isAnchor ? " · ÂNCORA" : ""}${bandTxt}</span>`;
         }).join("");
 
         return `
-          <article class="ticket">
+          <article class="ticket ${t.odd == null ? "" : covers ? "covers" : "no-cover"}">
             <div class="ticket-head">
-              <strong>Bilhete #${t.id}</strong>
+              <strong>Bilhete #${t.id}${coverHtml}</strong>
               <div class="ticket-meta">
                 Stake <b>${money(unit)}</b> · Odd <b>${oddTxt}</b> · Retorno <b>${retorno}</b>
               </div>
@@ -855,8 +1200,8 @@
       const ancora = state.mode === "ancora";
       els.legsField.hidden = !ancora;
       els.modeHint.textContent = ancora
-        ? "Modo âncora: escolha 1 jogo fixo com exatamente 1 resultado. Nos outros, marque 1/X/2. O sistema monta triplas/quadras sempre com a âncora."
-        : "Modo completo: em cada jogo marque um ou mais resultados (1, X, 2) e opcionalmente as odds. Total de bilhetes = produto das opções marcadas.";
+        ? "Modo âncora: escolha 1 jogo fixo com exatamente 1 resultado. Odd ideal da fixa: 1.50–1.85. Abaixo de 1.40 o sistema bloqueia (se a trava estiver ligada)."
+        : "Modo completo: em cada jogo marque um ou mais resultados (1, X, 2) e opcionalmente as odds. Cada odd é classificada automaticamente.";
       renderMatches();
       renderTickets();
     }
@@ -907,6 +1252,10 @@
       els.stake.addEventListener(evt, renderTickets);
       els.maxTickets.addEventListener(evt, renderTickets);
       els.legsPerTicket.addEventListener(evt, renderTickets);
+      els.minAnchorOdd.addEventListener(evt, renderAll);
+      els.maxAnchorOdd.addEventListener(evt, renderAll);
+      els.blockBelow.addEventListener(evt, renderAll);
+      els.enforceAnchorBand.addEventListener(evt, renderAll);
     });
 
     els.matches.addEventListener("click", (e) => {
@@ -952,7 +1301,31 @@
       const match = state.matches.find((m) => m.id === t.dataset.match);
       if (!match) return;
       match.odds[t.dataset.outcome] = t.value;
+
+      // Atualiza só a tag da odd sem perder o foco do input.
+      const outcome = t.closest(".outcome");
+      if (outcome) {
+        const oldTag = outcome.querySelector(".odd-tag");
+        const html = oddTagHtml(parseOdd(t.value));
+        if (oldTag) oldTag.outerHTML = html;
+        else outcome.insertAdjacentHTML("beforeend", html);
+      }
       renderTickets();
+      // Atualiza texto da âncora no card sem rerender completo.
+      if (state.mode === "ancora" && state.anchorId === match.id) {
+        const card = els.matches.querySelector(`[data-id="${match.id}"]`);
+        if (card) {
+          const opts = selectedOutcomes(match);
+          const ev = evaluateAnchor(opts.length === 1 ? opts[0].odd : null);
+          let meta = card.querySelector(".anchor-meta");
+          if (!meta) {
+            meta = document.createElement("div");
+            meta.className = "anchor-meta";
+            card.appendChild(meta);
+          }
+          meta.textContent = `${ev.title} — ${ev.msg}`;
+        }
+      }
     });
 
     function ticketsToText() {
@@ -1038,6 +1411,7 @@
       },
     ];
 
+    renderOddLegend();
     renderAll();
   </script>
 </body>
