@@ -706,7 +706,8 @@
       <strong style="font-family: var(--font-display); font-size: 1.15rem;">Buscar odds (APIfootball)</strong>
       <p class="hint" style="margin-top: 0.35rem;">
         Busca jogos e preenche automaticamente <b>1 / X / 2</b> e <b>1X / 12 / X2</b>.
-        A chave fica salva só neste navegador (localStorage), não no código.
+        A chave fica salva só neste navegador (localStorage).
+        <span style="color: var(--warn);">O que aparece depende do plano da APIfootball (free costuma ser só algumas ligas/países).</span>
       </p>
       <div class="row">
         <div class="field" style="flex: 2 1 220px;">
@@ -725,24 +726,21 @@
       <div class="row" style="margin-top: 0.75rem;">
         <div class="field" style="flex: 2 1 220px;">
           <label for="apiQuery">Buscar time / liga</label>
-          <input id="apiQuery" type="text" placeholder="Ex: Flamengo, Serie A, Libertadores" />
+          <input id="apiQuery" type="text" placeholder="Ex: Arsenal, Non League, Ligue 1" />
         </div>
         <div class="field">
           <label for="apiCountry">Filtro país</label>
           <select id="apiCountry">
-            <option value="">Todos</option>
-            <option value="Brazil" selected>Brazil</option>
-            <option value="England">England</option>
-            <option value="Spain">Spain</option>
-            <option value="Italy">Italy</option>
-            <option value="Germany">Germany</option>
-            <option value="France">France</option>
-            <option value="World">World</option>
+            <option value="">Todos do plano</option>
           </select>
         </div>
         <button class="btn btn-primary" id="apiSearch" type="button">Buscar jogos</button>
         <button class="btn btn-ghost" id="apiClearKey" type="button">Limpar chave</button>
       </div>
+      <label class="checkline">
+        <input id="apiIncludeFinished" type="checkbox" />
+        Incluir jogos já finalizados na lista
+      </label>
       <div class="api-status" id="apiStatus">Cole a chave e busque os jogos do dia.</div>
       <div class="api-results" id="apiResults"></div>
     </section>
@@ -979,10 +977,73 @@
       const res = await fetch(`${API_BASE}?${qs.toString()}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (data && typeof data === "object" && !Array.isArray(data) && data.error) {
-        throw new Error(data.message || data.error || "Erro na API");
+      if (data && typeof data === "object" && !Array.isArray(data) && (data.error || data.message)) {
+        const err = new Error(data.message || String(data.error) || "Erro na API");
+        err.code = data.error;
+        err.payload = data;
+        throw err;
       }
       return data;
+    }
+
+    async function loadPlanCountries() {
+      try {
+        const countries = await apiFetch("get_countries");
+        if (!Array.isArray(countries) || !countries.length) {
+          setApiStatus("Não consegui ler os países do plano.", "err");
+          return [];
+        }
+        const names = countries.map((c) => c.country_name).filter(Boolean);
+        els.apiCountry.innerHTML = `<option value="">Todos do plano</option>` + names
+          .map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`)
+          .join("");
+        state.planCountries = names;
+        setApiStatus(`Plano com acesso a: ${names.join(", ")}. Times fora disso não vão aparecer.`, "ok");
+        return names;
+      } catch (err) {
+        console.error(err);
+        setApiStatus(err.message || "Falha ao carregar países do plano.", "err");
+        return [];
+      }
+    }
+
+    function eachDateInclusive(fromStr, toStr) {
+      const out = [];
+      const from = new Date(`${fromStr}T00:00:00`);
+      const to = new Date(`${toStr}T00:00:00`);
+      if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return out;
+      for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
+        out.push(isoDate(d));
+      }
+      return out;
+    }
+
+    async function fetchEventsRange(from, to) {
+      const days = eachDateInclusive(from, to);
+      const all = [];
+      const seen = new Set();
+      let planMessages = [];
+      for (const day of days) {
+        try {
+          const data = await apiFetch("get_events", { from: day, to: day });
+          if (Array.isArray(data)) {
+            for (const e of data) {
+              const id = String(e.match_id);
+              if (seen.has(id)) continue;
+              seen.add(id);
+              all.push(e);
+            }
+          }
+        } catch (err) {
+          // Free plan returns 404 "No event found (please check your plan)!" on empty days.
+          if (String(err.code) === "404" || /no event found|check your plan/i.test(err.message || "")) {
+            planMessages.push(`${day}: sem jogos no plano`);
+            continue;
+          }
+          throw err;
+        }
+      }
+      return { events: all, planMessages };
     }
 
     function isFinishedStatus(status) {
@@ -1096,15 +1157,22 @@
         return;
       }
       try {
-        setApiStatus("Buscando jogos...");
+        setApiStatus("Buscando jogos do seu plano...");
         els.apiResults.innerHTML = "";
-        const data = await apiFetch("get_events", { from, to });
-        if (!Array.isArray(data)) throw new Error("Resposta inesperada da API.");
-        apiCacheEvents = data;
+        if (!state.planCountries || !state.planCountries.length) {
+          await loadPlanCountries();
+        }
+        const { events, planMessages } = await fetchEventsRange(from, to);
+        apiCacheEvents = events;
 
         const q = normalizeText(els.apiQuery.value);
         const country = normalizeText(els.apiCountry.value);
-        let list = data.filter((e) => !isFinishedStatus(e.match_status));
+        const includeFinished = !!document.getElementById("apiIncludeFinished")?.checked;
+
+        let list = events.slice();
+        if (!includeFinished) {
+          list = list.filter((e) => !isFinishedStatus(e.match_status));
+        }
         if (country) {
           list = list.filter((e) => normalizeText(e.country_name).includes(country));
         }
@@ -1120,23 +1188,32 @@
           });
         }
 
-        // Se filtro Brazil ficou vazio, mostra todos os não finalizados da busca textual.
-        if (!list.length && country && q) {
-          list = data.filter((e) => {
-            if (isFinishedStatus(e.match_status)) return false;
-            const blob = normalizeText([
-              e.match_hometeam_name,
-              e.match_awayteam_name,
-              e.league_name,
-              e.country_name,
-            ].join(" "));
-            return blob.includes(q);
-          });
+        list.sort((a, b) => String(a.match_date + a.match_time).localeCompare(String(b.match_date + b.match_time)));
+        renderApiResults(list.slice(0, 60));
+
+        const plan = (state.planCountries || []).join(", ") || "desconhecido";
+        if (!events.length) {
+          setApiStatus(
+            `Nenhum jogo no plano para esse período. Seu plano cobre: ${plan}. Brasil/Serie A normalmente não entra no free.`,
+            "err"
+          );
+          return;
+        }
+        if (!list.length) {
+          const hint = q
+            ? `Nada para "${els.apiQuery.value}". Pode ser nome diferente na API, filtro de país, ou o time não está no plano (${plan}).`
+            : `Há ${events.length} jogo(s) no período, mas o filtro atual zerou a lista.`;
+          setApiStatus(hint, "err");
+          // Mostra um preview sem filtro de texto pra não ficar "cego".
+          const preview = events
+            .filter((e) => includeFinished || !isFinishedStatus(e.match_status))
+            .slice(0, 20);
+          if (preview.length) renderApiResults(preview);
+          return;
         }
 
-        list.sort((a, b) => String(a.match_date + a.match_time).localeCompare(String(b.match_date + b.match_time)));
-        renderApiResults(list.slice(0, 40));
-        setApiStatus(`${list.length} jogo(s) encontrados (mostrando até 40).`, list.length ? "ok" : "");
+        const extra = planMessages.length ? ` (${planMessages.length} dia(s) sem jogos no plano)` : "";
+        setApiStatus(`${list.length} jogo(s) no filtro · plano: ${plan}${extra}`, "ok");
       } catch (err) {
         console.error(err);
         setApiStatus(err.message || "Falha ao buscar jogos.", "err");
