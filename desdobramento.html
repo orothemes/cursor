@@ -653,6 +653,7 @@
     }
     .api-status.err { color: var(--danger); }
     .api-status.ok { color: var(--ok); }
+    .api-status.caution { color: var(--warn); }
 
     @keyframes rise {
       from { opacity: 0; transform: translateY(10px); }
@@ -703,45 +704,59 @@
     </section>
 
     <section class="panel">
-      <strong style="font-family: var(--font-display); font-size: 1.15rem;">Buscar odds (APIfootball)</strong>
+      <strong style="font-family: var(--font-display); font-size: 1.15rem;">Buscar odds (The Odds API)</strong>
       <p class="hint" style="margin-top: 0.35rem;">
-        Busca jogos e preenche automaticamente <b>1 / X / 2</b> e <b>1X / 12 / X2</b>.
-        A chave fica salva só neste navegador (localStorage).
-        <span style="color: var(--warn);">O que aparece depende do plano da APIfootball (free costuma ser só algumas ligas/países).</span>
+        Busca jogos e preenche <b>1 / X / 2</b> (h2h) e, se disponível, <b>1X / 12 / X2</b> (double_chance).
+        Chave em <a href="https://the-odds-api.com/" target="_blank" rel="noopener" style="color:var(--accent);">the-odds-api.com</a>
+        · salva só no navegador. Free ~500 req/mês.
       </p>
       <div class="row">
         <div class="field" style="flex: 2 1 220px;">
           <label for="apiKey">API key</label>
-          <input id="apiKey" type="password" autocomplete="off" placeholder="Cole sua chave APIfootball" />
+          <input id="apiKey" type="password" autocomplete="off" placeholder="Cole sua chave The Odds API" />
         </div>
         <div class="field">
-          <label for="apiFrom">De</label>
-          <input id="apiFrom" type="date" />
+          <label for="apiSport">Liga / esporte</label>
+          <select id="apiSport">
+            <option value="soccer_brazil_campeonato" selected>Brasil Série A</option>
+            <option value="soccer_brazil_serie_b">Brasil Série B</option>
+            <option value="soccer_uefa_champs_league">Champions League</option>
+            <option value="soccer_uefa_europa_league">Europa League</option>
+            <option value="soccer_epl">Inglaterra Premier League</option>
+            <option value="soccer_spain_la_liga">Espanha La Liga</option>
+            <option value="soccer_italy_serie_a">Itália Serie A</option>
+            <option value="soccer_germany_bundesliga">Alemanha Bundesliga</option>
+            <option value="soccer_france_ligue_one">França Ligue 1</option>
+            <option value="soccer_usa_mls">MLS</option>
+            <option value="soccer_argentina_primera_division">Argentina Primera</option>
+            <option value="upcoming">Upcoming (várias ligas)</option>
+          </select>
         </div>
         <div class="field">
-          <label for="apiTo">Até</label>
-          <input id="apiTo" type="date" />
+          <label for="apiRegions">Região casas</label>
+          <select id="apiRegions">
+            <option value="eu" selected>EU</option>
+            <option value="uk">UK</option>
+            <option value="eu,uk">EU + UK</option>
+            <option value="us">US</option>
+            <option value="au">AU</option>
+          </select>
         </div>
       </div>
       <div class="row" style="margin-top: 0.75rem;">
         <div class="field" style="flex: 2 1 220px;">
-          <label for="apiQuery">Buscar time / liga</label>
-          <input id="apiQuery" type="text" placeholder="Ex: Arsenal, Non League, Ligue 1" />
-        </div>
-        <div class="field">
-          <label for="apiCountry">Filtro país</label>
-          <select id="apiCountry">
-            <option value="">Todos do plano</option>
-          </select>
+          <label for="apiQuery">Buscar time</label>
+          <input id="apiQuery" type="text" placeholder="Ex: Flamengo, Palmeiras, Fluminense" />
         </div>
         <button class="btn btn-primary" id="apiSearch" type="button">Buscar jogos</button>
+        <button class="btn btn-ghost" id="apiLoadSports" type="button">Atualizar ligas</button>
         <button class="btn btn-ghost" id="apiClearKey" type="button">Limpar chave</button>
       </div>
       <label class="checkline">
-        <input id="apiIncludeFinished" type="checkbox" />
-        Incluir jogos já finalizados na lista
+        <input id="apiFetchDc" type="checkbox" checked />
+        Ao importar, buscar também dupla chance (gasta 1 crédito extra por jogo)
       </label>
-      <div class="api-status" id="apiStatus">Cole a chave e busque os jogos do dia.</div>
+      <div class="api-status" id="apiStatus">Cole a chave The Odds API e busque uma liga (ex.: Brasil Série A).</div>
       <div class="api-results" id="apiResults"></div>
     </section>
 
@@ -911,18 +926,19 @@
       exportCsv: document.getElementById("exportCsv"),
       modes: [...document.querySelectorAll(".mode")],
       apiKey: document.getElementById("apiKey"),
-      apiFrom: document.getElementById("apiFrom"),
-      apiTo: document.getElementById("apiTo"),
+      apiSport: document.getElementById("apiSport"),
+      apiRegions: document.getElementById("apiRegions"),
       apiQuery: document.getElementById("apiQuery"),
-      apiCountry: document.getElementById("apiCountry"),
       apiSearch: document.getElementById("apiSearch"),
+      apiLoadSports: document.getElementById("apiLoadSports"),
       apiClearKey: document.getElementById("apiClearKey"),
+      apiFetchDc: document.getElementById("apiFetchDc"),
       apiStatus: document.getElementById("apiStatus"),
       apiResults: document.getElementById("apiResults"),
     };
 
-    const API_BASE = "https://apiv3.apifootball.com/";
-    const API_KEY_STORAGE = "desdobra_apifootball_key";
+    const API_BASE = "https://api.the-odds-api.com/v4";
+    const API_KEY_STORAGE = "desdobra_oddsapi_key";
     let apiCacheEvents = [];
 
     function setApiStatus(msg, kind = "") {
@@ -947,21 +963,6 @@
       return saveApiKey(els.apiKey.value);
     }
 
-    function isoDate(d) {
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return `${y}-${m}-${day}`;
-    }
-
-    function initApiDates() {
-      const today = new Date();
-      const soon = new Date(today);
-      soon.setDate(today.getDate() + 2);
-      if (!els.apiFrom.value) els.apiFrom.value = isoDate(today);
-      if (!els.apiTo.value) els.apiTo.value = isoDate(soon);
-    }
-
     function normalizeText(s) {
       return String(s || "")
         .normalize("NFD")
@@ -970,128 +971,144 @@
         .trim();
     }
 
-    async function apiFetch(action, params = {}) {
+    function quotaFromHeaders(res) {
+      const remaining = res.headers.get("x-requests-remaining");
+      const used = res.headers.get("x-requests-used");
+      if (remaining == null && used == null) return "";
+      return ` · créditos: usados ${used ?? "?"} / restam ${remaining ?? "?"}`;
+    }
+
+    async function oddsApiGet(path, params = {}) {
       const key = getApiKey();
-      if (!key) throw new Error("Informe a API key da APIfootball.");
-      const qs = new URLSearchParams({ action, APIkey: key, ...params });
-      const res = await fetch(`${API_BASE}?${qs.toString()}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      if (data && typeof data === "object" && !Array.isArray(data) && (data.error || data.message)) {
-        const err = new Error(data.message || String(data.error) || "Erro na API");
-        err.code = data.error;
+      if (!key) throw new Error("Informe a API key da The Odds API.");
+      const qs = new URLSearchParams({ apiKey: key, ...params });
+      const res = await fetch(`${API_BASE}${path}?${qs.toString()}`);
+      const quota = quotaFromHeaders(res);
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (_) {
+        data = null;
+      }
+      if (!res.ok) {
+        const msg = (data && (data.message || data.error_code)) || `HTTP ${res.status}`;
+        const err = new Error(`${msg}${quota}`);
+        err.status = res.status;
         err.payload = data;
         throw err;
       }
-      return data;
+      return { data, quota, res };
     }
 
-    async function loadPlanCountries() {
+    async function loadSoccerSports() {
       try {
-        const countries = await apiFetch("get_countries");
-        if (!Array.isArray(countries) || !countries.length) {
-          setApiStatus("Não consegui ler os países do plano.", "err");
-          return [];
+        setApiStatus("Carregando ligas disponíveis...");
+        const { data, quota } = await oddsApiGet("/sports", { all: "false" });
+        if (!Array.isArray(data)) throw new Error("Resposta inesperada em /sports");
+        const soccer = data.filter((s) => String(s.key || "").startsWith("soccer_") && s.active);
+        const current = els.apiSport.value;
+        const extras = [
+          { key: "upcoming", title: "Upcoming (várias ligas)" },
+        ];
+        const options = [...soccer.map((s) => ({ key: s.key, title: s.title || s.key })), ...extras];
+        // Keep Brazil options even if temporarily inactive in list.
+        const must = [
+          { key: "soccer_brazil_campeonato", title: "Brazil Série A" },
+          { key: "soccer_brazil_serie_b", title: "Brazil Série B" },
+        ];
+        for (const m of must) {
+          if (!options.some((o) => o.key === m.key)) options.unshift(m);
         }
-        const names = countries.map((c) => c.country_name).filter(Boolean);
-        els.apiCountry.innerHTML = `<option value="">Todos do plano</option>` + names
-          .map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`)
+        els.apiSport.innerHTML = options
+          .map((o) => `<option value="${escapeHtml(o.key)}">${escapeHtml(o.title)}</option>`)
           .join("");
-        state.planCountries = names;
-        setApiStatus(`Plano com acesso a: ${names.join(", ")}. Times fora disso não vão aparecer.`, "ok");
-        return names;
+        if ([...els.apiSport.options].some((o) => o.value === current)) {
+          els.apiSport.value = current;
+        } else {
+          els.apiSport.value = "soccer_brazil_campeonato";
+        }
+        setApiStatus(`Ligas carregadas: ${soccer.length} de futebol ativas${quota}`, "ok");
       } catch (err) {
         console.error(err);
-        setApiStatus(err.message || "Falha ao carregar países do plano.", "err");
-        return [];
+        setApiStatus(err.message || "Falha ao carregar ligas.", "err");
       }
     }
 
-    function eachDateInclusive(fromStr, toStr) {
-      const out = [];
-      const from = new Date(`${fromStr}T00:00:00`);
-      const to = new Date(`${toStr}T00:00:00`);
-      if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return out;
-      for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
-        out.push(isoDate(d));
-      }
-      return out;
-    }
-
-    async function fetchEventsRange(from, to) {
-      const days = eachDateInclusive(from, to);
-      const all = [];
-      const seen = new Set();
-      let planMessages = [];
-      for (const day of days) {
-        try {
-          const data = await apiFetch("get_events", { from: day, to: day });
-          if (Array.isArray(data)) {
-            for (const e of data) {
-              const id = String(e.match_id);
-              if (seen.has(id)) continue;
-              seen.add(id);
-              all.push(e);
-            }
-          }
-        } catch (err) {
-          // Free plan returns 404 "No event found (please check your plan)!" on empty days.
-          if (String(err.code) === "404" || /no event found|check your plan/i.test(err.message || "")) {
-            planMessages.push(`${day}: sem jogos no plano`);
-            continue;
-          }
-          throw err;
-        }
-      }
-      return { events: all, planMessages };
-    }
-
-    function isFinishedStatus(status) {
-      const s = String(status || "").toLowerCase();
-      return ["finished", "after pen.", "after extra time", "awarded", "cancelled", "postponed"].some((x) => s.includes(x));
-    }
-
-    function pickOddsBook(books) {
-      if (!Array.isArray(books) || !books.length) return null;
-      const needed = ["odd_1", "odd_x", "odd_2", "odd_1x", "odd_12", "odd_x2"];
-      const complete = books.filter((b) => needed.every((k) => parseOdd(b[k]) != null));
-      const pool = complete.length ? complete : books;
-      // Prefere casas conhecidas se existirem.
-      const preferred = ["bet365", "pinnacle", "unibet", "bwin", "williamhill", "1xbet"];
+    function pickBookmaker(bookmakers, marketKey) {
+      if (!Array.isArray(bookmakers) || !bookmakers.length) return null;
+      const withMarket = bookmakers.filter((b) => (b.markets || []).some((m) => m.key === marketKey));
+      const pool = withMarket.length ? withMarket : bookmakers;
+      const preferred = ["pinnacle", "bet365", "onexbet", "unibet", "williamhill", "bwin", "betfair_ex_eu"];
       for (const name of preferred) {
-        const hit = pool.find((b) => String(b.odd_bookmakers || "").toLowerCase().includes(name));
+        const hit = pool.find((b) => String(b.key || "").toLowerCase().includes(name) || String(b.title || "").toLowerCase().includes(name));
         if (hit) return hit;
       }
       return pool[0];
     }
 
-    function mapOddsToMatch(book) {
-      return {
-        "1": book.odd_1 || "",
-        X: book.odd_x || "",
-        "2": book.odd_2 || "",
-        "1X": book.odd_1x || "",
-        "12": book.odd_12 || "",
-        X2: book.odd_x2 || "",
-      };
+    function extractH2H(event, bookmaker) {
+      const home = event.home_team;
+      const away = event.away_team;
+      const market = (bookmaker.markets || []).find((m) => m.key === "h2h");
+      if (!market) return { "1": "", X: "", "2": "" };
+      const map = { "1": "", X: "", "2": "" };
+      for (const o of market.outcomes || []) {
+        if (o.name === home) map["1"] = String(o.price ?? "");
+        else if (o.name === away) map["2"] = String(o.price ?? "");
+        else if (/^draw$/i.test(o.name)) map.X = String(o.price ?? "");
+      }
+      return map;
     }
 
-    function addMatchFromApi(event, oddsMap, bookName) {
-      const home = event.match_hometeam_name;
-      const away = event.match_awayteam_name;
+    function extractDoubleChance(event, bookmaker) {
+      const home = event.home_team;
+      const away = event.away_team;
+      const market = (bookmaker.markets || []).find((m) => m.key === "double_chance");
+      const map = { "1X": "", "12": "", X2: "" };
+      if (!market) return map;
+      for (const o of market.outcomes || []) {
+        const n = String(o.name || "");
+        const price = String(o.price ?? "");
+        const homeDraw = new RegExp(`^${escapeRegExp(home)} or Draw$`, "i");
+        const awayDraw = new RegExp(`^${escapeRegExp(away)} or Draw$`, "i");
+        const homeAway = new RegExp(`^${escapeRegExp(home)} or ${escapeRegExp(away)}$`, "i");
+        const awayHome = new RegExp(`^${escapeRegExp(away)} or ${escapeRegExp(home)}$`, "i");
+        if (homeDraw.test(n) || /^Home or Draw$/i.test(n)) map["1X"] = price;
+        else if (awayDraw.test(n) || /^Away or Draw$/i.test(n)) map.X2 = price;
+        else if (homeAway.test(n) || awayHome.test(n) || /^Home or Away$/i.test(n)) map["12"] = price;
+      }
+      return map;
+    }
+
+    function escapeRegExp(s) {
+      return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    function formatKickoff(iso) {
+      if (!iso) return "";
+      try {
+        return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+      } catch (_) {
+        return iso;
+      }
+    }
+
+    function addMatchFromApi(event, oddsMap, bookName, leagueTitle) {
+      const home = event.home_team;
+      const away = event.away_team;
       const exists = state.matches.some(
         (m) => normalizeText(m.home) === normalizeText(home) && normalizeText(m.away) === normalizeText(away)
       );
       if (exists) {
-        // Atualiza odds do jogo já adicionado.
         const match = state.matches.find(
           (m) => normalizeText(m.home) === normalizeText(home) && normalizeText(m.away) === normalizeText(away)
         );
         match.odds = { ...emptyOdds(), ...oddsMap };
         match.apiMeta = {
-          matchId: event.match_id,
+          matchId: event.id,
+          sportKey: event.sport_key,
           bookmaker: bookName,
-          league: `${event.country_name} · ${event.league_name}`,
+          league: leagueTitle || event.sport_title || event.sport_key,
         };
         renderAll();
         setApiStatus(`Odds atualizadas: ${home} x ${away} (${bookName || "casa"})`, "ok");
@@ -1105,9 +1122,10 @@
         selected: { ...emptySelection(), "1": true },
         odds: { ...emptyOdds(), ...oddsMap },
         apiMeta: {
-          matchId: event.match_id,
+          matchId: event.id,
+          sportKey: event.sport_key,
           bookmaker: bookName,
-          league: `${event.country_name} · ${event.league_name}`,
+          league: leagueTitle || event.sport_title || event.sport_key,
         },
       });
       renderAll();
@@ -1115,16 +1133,51 @@
     }
 
     async function importApiMatch(matchId) {
-      const event = apiCacheEvents.find((e) => String(e.match_id) === String(matchId));
+      const event = apiCacheEvents.find((e) => String(e.id) === String(matchId));
       if (!event) throw new Error("Jogo não encontrado na busca atual.");
-      setApiStatus(`Buscando odds de ${event.match_hometeam_name} x ${event.match_awayteam_name}...`);
-      const odds = await apiFetch("get_odds", { match_id: String(matchId) });
-      if (!Array.isArray(odds) || !odds.length) {
-        throw new Error("Sem odds para este jogo na API.");
+      setApiStatus(`Importando ${event.home_team} x ${event.away_team}...`);
+
+      let book = pickBookmaker(event.bookmakers || [], "h2h");
+      let oddsMap = book ? { ...extractH2H(event, book), "1X": "", "12": "", X2: "" } : emptyOdds();
+      let bookName = book ? (book.title || book.key) : "";
+
+      const wantDc = !!els.apiFetchDc.checked;
+      const sportKey = event.sport_key || els.apiSport.value;
+      if (wantDc && sportKey && sportKey !== "upcoming") {
+        try {
+          const { data, quota } = await oddsApiGet(`/sports/${encodeURIComponent(sportKey)}/events/${encodeURIComponent(event.id)}/odds`, {
+            regions: els.apiRegions.value || "eu",
+            markets: "h2h,double_chance",
+            oddsFormat: "decimal",
+          });
+          const detailed = data;
+          const dcBook = pickBookmaker(detailed.bookmakers || [], "double_chance")
+            || pickBookmaker(detailed.bookmakers || [], "h2h");
+          if (dcBook) {
+            book = dcBook;
+            bookName = dcBook.title || dcBook.key;
+            oddsMap = {
+              ...extractH2H(detailed, dcBook),
+              ...extractDoubleChance(detailed, dcBook),
+            };
+            // If DC book missing h2h, merge from list result.
+            if (!oddsMap["1"] && event.bookmakers) {
+              const h2hBook = pickBookmaker(event.bookmakers, "h2h");
+              if (h2hBook) oddsMap = { ...oddsMap, ...extractH2H(event, h2hBook) };
+            }
+          }
+          setApiStatus(`Odds + dupla chance importadas${quota}`, "ok");
+        } catch (err) {
+          console.warn("DC fetch failed, keeping h2h only", err);
+          setApiStatus(`1X2 importado; dupla chance indisponível (${err.message})`, "caution");
+        }
       }
-      const book = pickOddsBook(odds);
-      if (!book) throw new Error("Não achei bookmaker com odds válidas.");
-      addMatchFromApi(event, mapOddsToMatch(book), book.odd_bookmakers);
+
+      if (!parseOdd(oddsMap["1"]) && !parseOdd(oddsMap.X) && !parseOdd(oddsMap["2"])) {
+        throw new Error("Esse jogo veio sem mercado h2h (1X2) nas casas da região escolhida.");
+      }
+
+      addMatchFromApi(event, oddsMap, bookName, event.sport_title);
     }
 
     function renderApiResults(events) {
@@ -1133,15 +1186,16 @@
         return;
       }
       els.apiResults.innerHTML = events.map((e) => {
-        const status = e.match_status || "Agendado";
-        const when = `${e.match_date || ""} ${e.match_time || ""}`.trim();
+        const when = formatKickoff(e.commence_time);
+        const books = (e.bookmakers || []).length;
+        const tip = e.sport_title || e.sport_key || "";
         return `
           <article class="api-match">
             <div>
-              <div class="title">${escapeHtml(e.match_hometeam_name)} x ${escapeHtml(e.match_awayteam_name)}</div>
-              <div class="meta">${escapeHtml(e.country_name || "")} · ${escapeHtml(e.league_name || "")} · ${escapeHtml(when)} · ${escapeHtml(status)}</div>
+              <div class="title">${escapeHtml(e.home_team)} x ${escapeHtml(e.away_team)}</div>
+              <div class="meta">${escapeHtml(tip)} · ${escapeHtml(when)} · ${books} casa(s)</div>
             </div>
-            <button class="btn btn-primary" type="button" data-act="import-api" data-match-id="${escapeHtml(e.match_id)}">
+            <button class="btn btn-primary" type="button" data-act="import-api" data-match-id="${escapeHtml(e.id)}">
               Importar odds
             </button>
           </article>
@@ -1150,70 +1204,40 @@
     }
 
     async function searchApiMatches() {
-      const from = els.apiFrom.value;
-      const to = els.apiTo.value;
-      if (!from || !to) {
-        setApiStatus("Informe o período (de/até).", "err");
-        return;
-      }
+      const sport = els.apiSport.value || "soccer_brazil_campeonato";
+      const regions = els.apiRegions.value || "eu";
       try {
-        setApiStatus("Buscando jogos do seu plano...");
+        setApiStatus("Buscando odds (h2h)...");
         els.apiResults.innerHTML = "";
-        if (!state.planCountries || !state.planCountries.length) {
-          await loadPlanCountries();
-        }
-        const { events, planMessages } = await fetchEventsRange(from, to);
-        apiCacheEvents = events;
+        const { data, quota } = await oddsApiGet(`/sports/${encodeURIComponent(sport)}/odds`, {
+          regions,
+          markets: "h2h",
+          oddsFormat: "decimal",
+        });
+        if (!Array.isArray(data)) throw new Error("Resposta inesperada da API.");
+        apiCacheEvents = data;
 
         const q = normalizeText(els.apiQuery.value);
-        const country = normalizeText(els.apiCountry.value);
-        const includeFinished = !!document.getElementById("apiIncludeFinished")?.checked;
-
-        let list = events.slice();
-        if (!includeFinished) {
-          list = list.filter((e) => !isFinishedStatus(e.match_status));
-        }
-        if (country) {
-          list = list.filter((e) => normalizeText(e.country_name).includes(country));
-        }
+        let list = data.slice();
         if (q) {
           list = list.filter((e) => {
-            const blob = normalizeText([
-              e.match_hometeam_name,
-              e.match_awayteam_name,
-              e.league_name,
-              e.country_name,
-            ].join(" "));
+            const blob = normalizeText([e.home_team, e.away_team, e.sport_title, e.sport_key].join(" "));
             return blob.includes(q);
           });
         }
+        list.sort((a, b) => String(a.commence_time || "").localeCompare(String(b.commence_time || "")));
+        renderApiResults(list);
 
-        list.sort((a, b) => String(a.match_date + a.match_time).localeCompare(String(b.match_date + b.match_time)));
-        renderApiResults(list.slice(0, 60));
-
-        const plan = (state.planCountries || []).join(", ") || "desconhecido";
-        if (!events.length) {
-          setApiStatus(
-            `Nenhum jogo no plano para esse período. Seu plano cobre: ${plan}. Brasil/Serie A normalmente não entra no free.`,
-            "err"
-          );
+        if (!data.length) {
+          setApiStatus(`Nenhum jogo em ${sport} agora${quota}. Troque a liga ou tente mais tarde.`, "err");
           return;
         }
         if (!list.length) {
-          const hint = q
-            ? `Nada para "${els.apiQuery.value}". Pode ser nome diferente na API, filtro de país, ou o time não está no plano (${plan}).`
-            : `Há ${events.length} jogo(s) no período, mas o filtro atual zerou a lista.`;
-          setApiStatus(hint, "err");
-          // Mostra um preview sem filtro de texto pra não ficar "cego".
-          const preview = events
-            .filter((e) => includeFinished || !isFinishedStatus(e.match_status))
-            .slice(0, 20);
-          if (preview.length) renderApiResults(preview);
+          setApiStatus(`Nada para "${els.apiQuery.value}". Mostrando a lista completa da liga.`, "err");
+          renderApiResults(data.slice(0, 40));
           return;
         }
-
-        const extra = planMessages.length ? ` (${planMessages.length} dia(s) sem jogos no plano)` : "";
-        setApiStatus(`${list.length} jogo(s) no filtro · plano: ${plan}${extra}`, "ok");
+        setApiStatus(`${list.length} jogo(s) · ${sport} · região ${regions}${quota}`, "ok");
       } catch (err) {
         console.error(err);
         setApiStatus(err.message || "Falha ao buscar jogos.", "err");
@@ -1730,6 +1754,7 @@
     }
 
     els.apiSearch.addEventListener("click", searchApiMatches);
+    els.apiLoadSports.addEventListener("click", loadSoccerSports);
     els.apiQuery.addEventListener("keydown", (e) => {
       if (e.key === "Enter") searchApiMatches();
     });
@@ -1962,9 +1987,10 @@
     ];
 
     renderOddLegend();
-    initApiDates();
     loadApiKey();
-    if (els.apiKey.value) setApiStatus("Chave carregada. Busque os jogos do período.", "ok");
+    if (els.apiKey.value) {
+      setApiStatus("Chave carregada. Pode buscar Brasil Série A / B ou atualizar ligas.", "ok");
+    }
     renderAll();
   </script>
 </body>

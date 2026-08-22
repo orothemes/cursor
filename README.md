@@ -17,11 +17,12 @@ Abra o arquivo `desdobramento.html` no navegador (duplo clique ou sirva a pasta 
 7. O painel mostra se cada bilhete sozinho cobre o stake do pacote
 8. Copie os bilhetes ou exporte CSV
 
-## Odds via APIfootball
+## Odds via The Odds API
 
-1. Cole a API key no painel **Buscar odds**
-2. Escolha o período e (opcional) filtre por país/time
-3. Clique em **Importar odds** no jogo desejado
-4. O Desdobra preenche `1/X/2` e `1X/12/X2` automaticamente
+1. Crie uma chave grátis em https://the-odds-api.com/
+2. Cole no painel **Buscar odds (The Odds API)**
+3. Escolha a liga (ex.: Brasil Série A) e região das casas (EU/UK)
+4. **Buscar jogos** → filtre pelo time → **Importar odds**
+5. O Desdobra preenche `1/X/2` e, se marcado, busca `1X/12/X2`
 
 A chave fica apenas no `localStorage` do navegador.
