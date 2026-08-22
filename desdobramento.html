@@ -244,6 +244,44 @@
       gap: 0.55rem;
     }
 
+    .market-block {
+      margin-top: 0.75rem;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .market-block:first-of-type { margin-top: 0; }
+
+    .market-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .outcome.dc.on {
+      border-color: rgba(140, 180, 255, 0.55);
+      background: rgba(140, 180, 255, 0.08);
+    }
+
+    .outcome.dc.on .chip {
+      background: #9ec0ff;
+      color: #0f1a2a;
+    }
+
+    .quick-dc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.55rem;
+    }
+
+    .quick-dc .btn {
+      padding: 0.45rem 0.7rem;
+      font-size: 0.8rem;
+    }
+
     .outcome {
       border: 1px solid var(--line);
       border-radius: 14px;
@@ -594,8 +632,8 @@
     <header>
       <h1 class="brand">Desdobra<span>.</span></h1>
       <p class="lead">
-        Coloque os jogos, marque <strong>1 / X / 2</strong> e gere o desdobramento.
-        O sistema classifica a odd (super favorito, favorito forte, etc.) e avisa se a âncora está fora da zona boa.
+        Coloque os jogos, marque <strong>1 / X / 2</strong> ou <strong>dupla chance (1X / 12 / X2)</strong> e gere o desdobramento.
+        No modo âncora, a fixa pode ser resultado final ou dupla chance; o resto desdobra em cima disso.
       </p>
     </header>
 
@@ -646,7 +684,7 @@
         </button>
         <button class="mode" type="button" data-mode="ancora">
           <strong>Âncora + Triplas</strong>
-          <p>1 fixa em todos os bilhetes + desdobro curto em triplas (formato mais estável).</p>
+          <p>1 fixa (1X2 ou dupla chance) + desdobro curto. Ideal pra cobrir X2/1X sem explodir bilhetes.</p>
         </button>
       </div>
 
@@ -708,20 +746,53 @@
   </div>
 
   <script>
-    const OUTCOMES = [
-      { key: "1", label: "Casa" },
-      { key: "X", label: "Empate" },
-      { key: "2", label: "Fora" },
+    const RESULT_1X2 = [
+      { key: "1", label: "Casa", group: "1x2" },
+      { key: "X", label: "Empate", group: "1x2" },
+      { key: "2", label: "Fora", group: "1x2" },
     ];
+
+    const DOUBLE_CHANCE = [
+      { key: "1X", label: "Casa ou empate", group: "dc", short: "1X" },
+      { key: "12", label: "Casa ou fora", group: "dc", short: "12" },
+      { key: "X2", label: "Empate ou fora", group: "dc", short: "X2" },
+    ];
+
+    const OUTCOMES = [...RESULT_1X2, ...DOUBLE_CHANCE];
 
     const ODD_BANDS = [
       { id: "extreme", min: 1.01, max: 1.20, label: "Super favorito extremo", tip: "Acerta muito, lucra pouco. Evite como âncora.", cls: "extreme" },
-      { id: "super", min: 1.21, max: 1.40, label: "Super favorito", tip: "Come o payout do pacote. Não use como fixa.", cls: "super" },
+      { id: "super", min: 1.21, max: 1.40, label: "Super favorito", tip: "Come o payout do pacote. Não use como fixa 1X2. Em dupla chance, revise o bloqueio.", cls: "super" },
       { id: "strong", min: 1.41, max: 1.70, label: "Favorito forte", tip: "Zona boa de âncora (principalmente 1.50–1.70).", cls: "strong" },
       { id: "moderate", min: 1.71, max: 2.00, label: "Favorito moderado", tip: "Âncora aceitável até ~1.85 com tese.", cls: "moderate" },
       { id: "light", min: 2.01, max: 2.40, label: "Favorito leve", tip: "Mais seleção normal do que fixa.", cls: "light" },
       { id: "under", min: 2.41, max: 99, label: "Equilíbrio / zebra", tip: "Não trate como âncora; use single ou variável.", cls: "under" },
     ];
+
+    function emptySelection() {
+      return { "1": false, X: false, "2": false, "1X": false, "12": false, X2: false };
+    }
+
+    function emptyOdds() {
+      return { "1": "", X: "", "2": "", "1X": "", "12": "", X2: "" };
+    }
+
+    function isDoubleChance(key) {
+      return key === "1X" || key === "12" || key === "X2";
+    }
+
+    function coversOverlap(selectedKeys) {
+      const set = new Set(selectedKeys);
+      const notes = [];
+      if (set.has("1") && set.has("1X")) notes.push("1 e 1X se sobrepõem");
+      if (set.has("1") && set.has("12")) notes.push("1 e 12 se sobrepõem");
+      if (set.has("X") && set.has("1X")) notes.push("X e 1X se sobrepõem");
+      if (set.has("X") && set.has("X2")) notes.push("X e X2 se sobrepõem");
+      if (set.has("2") && set.has("12")) notes.push("2 e 12 se sobrepõem");
+      if (set.has("2") && set.has("X2")) notes.push("2 e X2 se sobrepõem");
+      if (set.has("1X") && set.has("12") && set.has("X2")) notes.push("1X+12+X2 cobrem tudo (odds baixas)");
+      return notes;
+    }
 
     const state = {
       mode: "completo",
@@ -807,38 +878,52 @@
       };
     }
 
-    function evaluateAnchor(odd) {
+    function evaluateAnchor(odd, outcomeKey = null) {
       const cfg = getAnchorConfig();
+      const dc = outcomeKey ? isDoubleChance(outcomeKey) : false;
       if (odd == null) {
         return {
           level: "caution",
           title: "Âncora sem odd",
-          msg: "Preencha a odd da fixa para validar a faixa (ideal 1.50–1.85).",
+          msg: dc
+            ? "Preencha a odd da dupla chance. Como fixa, 1X/X2 costuma ficar entre 1.25 e 1.55."
+            : "Preencha a odd da fixa para validar a faixa (ideal 1.50–1.85).",
           blocked: false,
         };
       }
       const band = classifyOdd(odd);
-      if (odd < cfg.blockBelow) {
+      // Dupla chance naturalmente tem odd mais baixa que 1X2 puro.
+      const effectiveBlock = dc ? Math.min(cfg.blockBelow, 1.20) : cfg.blockBelow;
+      const minIdeal = dc ? Math.min(cfg.minIdeal, 1.25) : cfg.minIdeal;
+      const maxIdeal = dc ? Math.min(cfg.maxIdeal, 1.55) : cfg.maxIdeal;
+
+      if (odd < effectiveBlock) {
         return {
           level: "bad",
           title: `Âncora bloqueada · ${band.label} (${odd.toFixed(2)})`,
-          msg: `Odd abaixo de ${cfg.blockBelow.toFixed(2)} come o payout. Troque a fixa ou use single. Zona ideal: ${cfg.minIdeal.toFixed(2)}–${cfg.maxIdeal.toFixed(2)}.`,
+          msg: dc
+            ? `Dupla chance abaixo de ${effectiveBlock.toFixed(2)} quase não paga o pacote. Prefira outra fixa ou solte o bloqueio.`
+            : `Odd abaixo de ${cfg.blockBelow.toFixed(2)} come o payout. Troque a fixa ou use single. Zona ideal: ${cfg.minIdeal.toFixed(2)}–${cfg.maxIdeal.toFixed(2)}.`,
           blocked: cfg.enforce,
         };
       }
-      if (odd < cfg.minIdeal) {
+      if (odd < minIdeal) {
         return {
           level: "caution",
           title: `Âncora fraca · ${band.label} (${odd.toFixed(2)})`,
-          msg: `Acima do bloqueio, mas abaixo do mínimo ideal (${cfg.minIdeal.toFixed(2)}). Pacote tende a lucrar pouco no cenário mais comum.`,
+          msg: dc
+            ? `1X/12/X2 abaixo de ${minIdeal.toFixed(2)} deixa o pacote apertado. Use só se a cobertura valer a odd baixa.`
+            : `Acima do bloqueio, mas abaixo do mínimo ideal (${cfg.minIdeal.toFixed(2)}). Pacote tende a lucrar pouco no cenário mais comum.`,
           blocked: false,
         };
       }
-      if (odd <= cfg.maxIdeal) {
+      if (odd <= maxIdeal) {
         return {
           level: "good",
           title: `Âncora na zona boa · ${band.label} (${odd.toFixed(2)})`,
-          msg: `Faixa ideal para fixa de desdobro (${cfg.minIdeal.toFixed(2)}–${cfg.maxIdeal.toFixed(2)}). Ainda assim, se cair, zera o pacote.`,
+          msg: dc
+            ? `Dupla chance boa como fixa (${minIdeal.toFixed(2)}–${maxIdeal.toFixed(2)}). Cobre 2 resultados e ainda deixa payout útil.`
+            : `Faixa ideal para fixa de desdobro (${cfg.minIdeal.toFixed(2)}–${cfg.maxIdeal.toFixed(2)}). Ainda assim, se cair, zera o pacote.`,
           blocked: false,
         };
       }
@@ -948,12 +1033,12 @@
       if (anchorOpts.length !== 1) {
         return {
           tickets: [],
-          warning: "Na âncora, marque exatamente 1 resultado (1 ou X ou 2).",
+          warning: "Na âncora, marque exatamente 1 mercado (1, X, 2, 1X, 12 ou X2).",
           anchorEval: null,
         };
       }
 
-      const anchorEval = evaluateAnchor(anchorOpts[0].odd);
+      const anchorEval = evaluateAnchor(anchorOpts[0].odd, anchorOpts[0].key);
       if (anchorEval.blocked) {
         return { tickets: [], warning: anchorEval.msg, anchorEval };
       }
@@ -1031,6 +1116,23 @@
       return state.mode === "completo" ? buildCompleto() : buildAncora();
     }
 
+    function outcomeCardHtml(m, o) {
+      const on = !!m.selected[o.key];
+      const odd = parseOdd(m.odds[o.key]);
+      const dcClass = o.group === "dc" ? "dc" : "";
+      return `
+        <div class="outcome ${dcClass} ${on ? "on" : ""}" data-match="${m.id}" data-outcome="${o.key}">
+          <div class="outcome-head">
+            <span class="chip">${o.key}</span>
+            <input class="toggle" type="checkbox" ${on ? "checked" : ""} data-act="toggle" data-match="${m.id}" data-outcome="${o.key}" aria-label="${o.label}" />
+          </div>
+          <div style="font-size:0.82rem;color:var(--muted);">${o.label}</div>
+          <input type="number" min="1.01" step="0.01" placeholder="Odd" value="${m.odds[o.key] ?? ""}" data-act="odd" data-match="${m.id}" data-outcome="${o.key}" />
+          ${oddTagHtml(odd)}
+        </div>
+      `;
+    }
+
     function renderMatches() {
       if (!state.matches.length) {
         els.matches.innerHTML = `<div class="empty">Nenhum jogo ainda. Adicione casa x fora acima.</div>`;
@@ -1039,29 +1141,20 @@
 
       els.matches.innerHTML = state.matches.map((m, index) => {
         const isAnchor = state.anchorId === m.id;
+        const selectedKeys = OUTCOMES.filter((o) => m.selected[o.key]).map((o) => o.key);
+        const overlap = coversOverlap(selectedKeys);
         let anchorMeta = "";
         if (isAnchor && state.mode === "ancora") {
           const opts = selectedOutcomes(m);
           const odd = opts.length === 1 ? opts[0].odd : null;
-          const ev = evaluateAnchor(odd);
+          const key = opts.length === 1 ? opts[0].key : null;
+          const ev = evaluateAnchor(odd, key);
           anchorMeta = `<div class="anchor-meta">${escapeHtml(ev.title)} — ${escapeHtml(ev.msg)}</div>`;
         }
 
-        const outcomeHtml = OUTCOMES.map((o) => {
-          const on = !!m.selected[o.key];
-          const odd = parseOdd(m.odds[o.key]);
-          return `
-            <div class="outcome ${on ? "on" : ""}" data-match="${m.id}" data-outcome="${o.key}">
-              <div class="outcome-head">
-                <span class="chip">${o.key}</span>
-                <input class="toggle" type="checkbox" ${on ? "checked" : ""} data-act="toggle" data-match="${m.id}" data-outcome="${o.key}" aria-label="${o.label}" />
-              </div>
-              <div style="font-size:0.82rem;color:var(--muted);">${o.label}</div>
-              <input type="number" min="1.01" step="0.01" placeholder="Odd" value="${m.odds[o.key] ?? ""}" data-act="odd" data-match="${m.id}" data-outcome="${o.key}" />
-              ${oddTagHtml(odd)}
-            </div>
-          `;
-        }).join("");
+        const overlapHtml = overlap.length
+          ? `<div class="anchor-meta" style="color:var(--warn);">Atenção: ${escapeHtml(overlap.join("; "))}. Isso gera bilhetes redundantes.</div>`
+          : "";
 
         return `
           <article class="match ${isAnchor ? "is-anchor" : ""}" data-id="${m.id}">
@@ -1071,14 +1164,31 @@
               </div>
               <button class="btn btn-danger" type="button" data-act="remove" data-match="${m.id}">Remover</button>
             </div>
-            <div class="outcomes">${outcomeHtml}</div>
+
+            <div class="market-block">
+              <div class="market-label">Resultado final</div>
+              <div class="outcomes">${RESULT_1X2.map((o) => outcomeCardHtml(m, o)).join("")}</div>
+            </div>
+
+            <div class="market-block">
+              <div class="market-label">Dupla chance</div>
+              <div class="outcomes">${DOUBLE_CHANCE.map((o) => outcomeCardHtml(m, o)).join("")}</div>
+              <div class="quick-dc">
+                <button class="btn btn-ghost" type="button" data-act="quick-dc" data-match="${m.id}" data-outcome="1X">Só 1X</button>
+                <button class="btn btn-ghost" type="button" data-act="quick-dc" data-match="${m.id}" data-outcome="X2">Só X2</button>
+                <button class="btn btn-ghost" type="button" data-act="quick-dc" data-match="${m.id}" data-outcome="12">Só 12</button>
+                <button class="btn btn-ghost" type="button" data-act="clear-1x2" data-match="${m.id}">Limpar 1X2</button>
+              </div>
+            </div>
+
             <div class="match-actions">
               <button class="btn btn-ghost anchor-btn ${isAnchor ? "active" : ""}" type="button" data-act="anchor" data-match="${m.id}" ${state.mode !== "ancora" ? "hidden" : ""}>
                 ${isAnchor ? "Âncora selecionada" : "Usar como âncora"}
               </button>
-              <span class="hint" style="margin:0;">Marque casa, empate e/ou fora — o sistema classifica a odd na hora.</span>
+              <span class="hint" style="margin:0;">Use 1X2 para cenários pontuais ou dupla chance pra cobrir 2 resultados num bilhete só.</span>
             </div>
             ${anchorMeta}
+            ${overlapHtml}
           </article>
         `;
       }).join("");
@@ -1102,7 +1212,10 @@
         const m = state.matches.find((x) => x.id === state.anchorId);
         if (!m) return null;
         const opts = selectedOutcomes(m);
-        return evaluateAnchor(opts.length === 1 ? opts[0].odd : null);
+        return evaluateAnchor(
+          opts.length === 1 ? opts[0].odd : null,
+          opts.length === 1 ? opts[0].key : null
+        );
       })();
       if (!ev) {
         els.anchorAdvice.hidden = true;
@@ -1143,7 +1256,7 @@
       }
 
       if (!tickets.length) {
-        els.tickets.innerHTML = `<div class="empty">${warning || "Adicione jogos e marque 1 / X / 2 para desdobrar."}</div>`;
+        els.tickets.innerHTML = `<div class="empty">${warning || "Adicione jogos e marque 1/X/2 ou dupla chance (1X/12/X2) para desdobrar."}</div>`;
         els.packageAdvice.hidden = true;
         window.__lastTickets = [];
         return;
@@ -1200,8 +1313,8 @@
       const ancora = state.mode === "ancora";
       els.legsField.hidden = !ancora;
       els.modeHint.textContent = ancora
-        ? "Modo âncora: escolha 1 jogo fixo com exatamente 1 resultado. Odd ideal da fixa: 1.50–1.85. Abaixo de 1.40 o sistema bloqueia (se a trava estiver ligada)."
-        : "Modo completo: em cada jogo marque um ou mais resultados (1, X, 2) e opcionalmente as odds. Cada odd é classificada automaticamente.";
+        ? "Modo âncora: 1 fixa com exatamente 1 mercado (1, X, 2, 1X, 12 ou X2). Nos outros jogos, desdobre 1X2 e/ou dupla chance. Odd ideal 1X2: 1.50–1.85 | dupla chance: ~1.25–1.55."
+        : "Modo completo: marque 1/X/2 e/ou dupla chance (1X/12/X2). Total de bilhetes = produto das opções marcadas em cada jogo.";
       renderMatches();
       renderTickets();
     }
@@ -1217,8 +1330,8 @@
         id: uid(),
         home,
         away,
-        selected: { "1": true, X: false, "2": false },
-        odds: { "1": "", X: "", "2": "" },
+        selected: { ...emptySelection(), "1": true },
+        odds: emptyOdds(),
       });
       els.home.value = "";
       els.away.value = "";
@@ -1282,9 +1395,24 @@
         return;
       }
 
+      if (act === "quick-dc") {
+        const key = t.dataset.outcome;
+        // Limpa 1X2 e outras DC; deixa só a DC escolhida.
+        OUTCOMES.forEach((o) => { match.selected[o.key] = false; });
+        match.selected[key] = true;
+        renderAll();
+        return;
+      }
+
+      if (act === "clear-1x2") {
+        RESULT_1X2.forEach((o) => { match.selected[o.key] = false; });
+        renderAll();
+        return;
+      }
+
       if (act === "anchor") {
         state.anchorId = state.anchorId === matchId ? null : matchId;
-        // Âncora deve ter só 1 resultado marcado: se tiver vários, mantém o primeiro marcado.
+        // Âncora deve ter só 1 mercado marcado: se tiver vários, mantém o primeiro marcado.
         const selected = OUTCOMES.filter((o) => match.selected[o.key]);
         if (selected.length !== 1 && selected.length > 0) {
           const keep = selected[0].key;
@@ -1316,7 +1444,10 @@
         const card = els.matches.querySelector(`[data-id="${match.id}"]`);
         if (card) {
           const opts = selectedOutcomes(match);
-          const ev = evaluateAnchor(opts.length === 1 ? opts[0].odd : null);
+          const ev = evaluateAnchor(
+            opts.length === 1 ? opts[0].odd : null,
+            opts.length === 1 ? opts[0].key : null
+          );
           let meta = card.querySelector(".anchor-meta");
           if (!meta) {
             meta = document.createElement("div");
@@ -1392,22 +1523,22 @@
         id: uid(),
         home: "Porto",
         away: "Braga",
-        selected: { "1": true, X: false, "2": false },
-        odds: { "1": "1.72", X: "3.40", "2": "4.50" },
+        selected: { ...emptySelection(), "1X": true },
+        odds: { ...emptyOdds(), "1": "1.72", X: "3.40", "2": "4.50", "1X": "1.28", "12": "1.22", X2: "2.05" },
       },
       {
         id: uid(),
         home: "Ajax",
         away: "Feyenoord",
-        selected: { "1": true, X: true, "2": false },
-        odds: { "1": "2.10", X: "3.30", "2": "3.20" },
+        selected: { ...emptySelection(), "1": true, X: true },
+        odds: { ...emptyOdds(), "1": "2.10", X: "3.30", "2": "3.20", "1X": "1.35", "12": "1.30", X2: "1.70" },
       },
       {
         id: uid(),
         home: "Leipzig",
         away: "Stuttgart",
-        selected: { "1": true, X: false, "2": true },
-        odds: { "1": "1.95", X: "3.50", "2": "3.60" },
+        selected: { ...emptySelection(), X2: true },
+        odds: { ...emptyOdds(), "1": "1.95", X: "3.50", "2": "3.60", "1X": "1.30", "12": "1.28", X2: "1.80" },
       },
     ];
 
