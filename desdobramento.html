@@ -616,6 +616,44 @@
       color: var(--muted);
     }
 
+    .api-results {
+      display: grid;
+      gap: 0.5rem;
+      margin-top: 0.85rem;
+      max-height: 340px;
+      overflow: auto;
+    }
+
+    .api-match {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.7rem 0.8rem;
+      background: rgba(0,0,0,0.2);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .api-match .meta {
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .api-match .title {
+      font-weight: 700;
+      font-family: var(--font-display);
+    }
+
+    .api-status {
+      margin-top: 0.65rem;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+    .api-status.err { color: var(--danger); }
+    .api-status.ok { color: var(--ok); }
+
     @keyframes rise {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
@@ -662,6 +700,51 @@
         <input id="enforceAnchorBand" type="checkbox" checked />
         Bloquear geração se a âncora estiver abaixo do mínimo de bloqueio
       </label>
+    </section>
+
+    <section class="panel">
+      <strong style="font-family: var(--font-display); font-size: 1.15rem;">Buscar odds (APIfootball)</strong>
+      <p class="hint" style="margin-top: 0.35rem;">
+        Busca jogos e preenche automaticamente <b>1 / X / 2</b> e <b>1X / 12 / X2</b>.
+        A chave fica salva só neste navegador (localStorage), não no código.
+      </p>
+      <div class="row">
+        <div class="field" style="flex: 2 1 220px;">
+          <label for="apiKey">API key</label>
+          <input id="apiKey" type="password" autocomplete="off" placeholder="Cole sua chave APIfootball" />
+        </div>
+        <div class="field">
+          <label for="apiFrom">De</label>
+          <input id="apiFrom" type="date" />
+        </div>
+        <div class="field">
+          <label for="apiTo">Até</label>
+          <input id="apiTo" type="date" />
+        </div>
+      </div>
+      <div class="row" style="margin-top: 0.75rem;">
+        <div class="field" style="flex: 2 1 220px;">
+          <label for="apiQuery">Buscar time / liga</label>
+          <input id="apiQuery" type="text" placeholder="Ex: Flamengo, Serie A, Libertadores" />
+        </div>
+        <div class="field">
+          <label for="apiCountry">Filtro país</label>
+          <select id="apiCountry">
+            <option value="">Todos</option>
+            <option value="Brazil" selected>Brazil</option>
+            <option value="England">England</option>
+            <option value="Spain">Spain</option>
+            <option value="Italy">Italy</option>
+            <option value="Germany">Germany</option>
+            <option value="France">France</option>
+            <option value="World">World</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" id="apiSearch" type="button">Buscar jogos</button>
+        <button class="btn btn-ghost" id="apiClearKey" type="button">Limpar chave</button>
+      </div>
+      <div class="api-status" id="apiStatus">Cole a chave e busque os jogos do dia.</div>
+      <div class="api-results" id="apiResults"></div>
     </section>
 
     <section class="panel">
@@ -829,7 +912,236 @@
       copyTickets: document.getElementById("copyTickets"),
       exportCsv: document.getElementById("exportCsv"),
       modes: [...document.querySelectorAll(".mode")],
+      apiKey: document.getElementById("apiKey"),
+      apiFrom: document.getElementById("apiFrom"),
+      apiTo: document.getElementById("apiTo"),
+      apiQuery: document.getElementById("apiQuery"),
+      apiCountry: document.getElementById("apiCountry"),
+      apiSearch: document.getElementById("apiSearch"),
+      apiClearKey: document.getElementById("apiClearKey"),
+      apiStatus: document.getElementById("apiStatus"),
+      apiResults: document.getElementById("apiResults"),
     };
+
+    const API_BASE = "https://apiv3.apifootball.com/";
+    const API_KEY_STORAGE = "desdobra_apifootball_key";
+    let apiCacheEvents = [];
+
+    function setApiStatus(msg, kind = "") {
+      els.apiStatus.textContent = msg;
+      els.apiStatus.className = `api-status ${kind}`;
+    }
+
+    function loadApiKey() {
+      const saved = localStorage.getItem(API_KEY_STORAGE) || "";
+      els.apiKey.value = saved;
+      return saved;
+    }
+
+    function saveApiKey(value) {
+      const key = String(value || "").trim();
+      if (key) localStorage.setItem(API_KEY_STORAGE, key);
+      else localStorage.removeItem(API_KEY_STORAGE);
+      return key;
+    }
+
+    function getApiKey() {
+      return saveApiKey(els.apiKey.value);
+    }
+
+    function isoDate(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function initApiDates() {
+      const today = new Date();
+      const soon = new Date(today);
+      soon.setDate(today.getDate() + 2);
+      if (!els.apiFrom.value) els.apiFrom.value = isoDate(today);
+      if (!els.apiTo.value) els.apiTo.value = isoDate(soon);
+    }
+
+    function normalizeText(s) {
+      return String(s || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+    }
+
+    async function apiFetch(action, params = {}) {
+      const key = getApiKey();
+      if (!key) throw new Error("Informe a API key da APIfootball.");
+      const qs = new URLSearchParams({ action, APIkey: key, ...params });
+      const res = await fetch(`${API_BASE}?${qs.toString()}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data && typeof data === "object" && !Array.isArray(data) && data.error) {
+        throw new Error(data.message || data.error || "Erro na API");
+      }
+      return data;
+    }
+
+    function isFinishedStatus(status) {
+      const s = String(status || "").toLowerCase();
+      return ["finished", "after pen.", "after extra time", "awarded", "cancelled", "postponed"].some((x) => s.includes(x));
+    }
+
+    function pickOddsBook(books) {
+      if (!Array.isArray(books) || !books.length) return null;
+      const needed = ["odd_1", "odd_x", "odd_2", "odd_1x", "odd_12", "odd_x2"];
+      const complete = books.filter((b) => needed.every((k) => parseOdd(b[k]) != null));
+      const pool = complete.length ? complete : books;
+      // Prefere casas conhecidas se existirem.
+      const preferred = ["bet365", "pinnacle", "unibet", "bwin", "williamhill", "1xbet"];
+      for (const name of preferred) {
+        const hit = pool.find((b) => String(b.odd_bookmakers || "").toLowerCase().includes(name));
+        if (hit) return hit;
+      }
+      return pool[0];
+    }
+
+    function mapOddsToMatch(book) {
+      return {
+        "1": book.odd_1 || "",
+        X: book.odd_x || "",
+        "2": book.odd_2 || "",
+        "1X": book.odd_1x || "",
+        "12": book.odd_12 || "",
+        X2: book.odd_x2 || "",
+      };
+    }
+
+    function addMatchFromApi(event, oddsMap, bookName) {
+      const home = event.match_hometeam_name;
+      const away = event.match_awayteam_name;
+      const exists = state.matches.some(
+        (m) => normalizeText(m.home) === normalizeText(home) && normalizeText(m.away) === normalizeText(away)
+      );
+      if (exists) {
+        // Atualiza odds do jogo já adicionado.
+        const match = state.matches.find(
+          (m) => normalizeText(m.home) === normalizeText(home) && normalizeText(m.away) === normalizeText(away)
+        );
+        match.odds = { ...emptyOdds(), ...oddsMap };
+        match.apiMeta = {
+          matchId: event.match_id,
+          bookmaker: bookName,
+          league: `${event.country_name} · ${event.league_name}`,
+        };
+        renderAll();
+        setApiStatus(`Odds atualizadas: ${home} x ${away} (${bookName || "casa"})`, "ok");
+        return;
+      }
+
+      state.matches.push({
+        id: uid(),
+        home,
+        away,
+        selected: { ...emptySelection(), "1": true },
+        odds: { ...emptyOdds(), ...oddsMap },
+        apiMeta: {
+          matchId: event.match_id,
+          bookmaker: bookName,
+          league: `${event.country_name} · ${event.league_name}`,
+        },
+      });
+      renderAll();
+      setApiStatus(`Adicionado: ${home} x ${away} · odds de ${bookName || "API"}`, "ok");
+    }
+
+    async function importApiMatch(matchId) {
+      const event = apiCacheEvents.find((e) => String(e.match_id) === String(matchId));
+      if (!event) throw new Error("Jogo não encontrado na busca atual.");
+      setApiStatus(`Buscando odds de ${event.match_hometeam_name} x ${event.match_awayteam_name}...`);
+      const odds = await apiFetch("get_odds", { match_id: String(matchId) });
+      if (!Array.isArray(odds) || !odds.length) {
+        throw new Error("Sem odds para este jogo na API.");
+      }
+      const book = pickOddsBook(odds);
+      if (!book) throw new Error("Não achei bookmaker com odds válidas.");
+      addMatchFromApi(event, mapOddsToMatch(book), book.odd_bookmakers);
+    }
+
+    function renderApiResults(events) {
+      if (!events.length) {
+        els.apiResults.innerHTML = `<div class="empty">Nenhum jogo encontrado nesse filtro.</div>`;
+        return;
+      }
+      els.apiResults.innerHTML = events.map((e) => {
+        const status = e.match_status || "Agendado";
+        const when = `${e.match_date || ""} ${e.match_time || ""}`.trim();
+        return `
+          <article class="api-match">
+            <div>
+              <div class="title">${escapeHtml(e.match_hometeam_name)} x ${escapeHtml(e.match_awayteam_name)}</div>
+              <div class="meta">${escapeHtml(e.country_name || "")} · ${escapeHtml(e.league_name || "")} · ${escapeHtml(when)} · ${escapeHtml(status)}</div>
+            </div>
+            <button class="btn btn-primary" type="button" data-act="import-api" data-match-id="${escapeHtml(e.match_id)}">
+              Importar odds
+            </button>
+          </article>
+        `;
+      }).join("");
+    }
+
+    async function searchApiMatches() {
+      const from = els.apiFrom.value;
+      const to = els.apiTo.value;
+      if (!from || !to) {
+        setApiStatus("Informe o período (de/até).", "err");
+        return;
+      }
+      try {
+        setApiStatus("Buscando jogos...");
+        els.apiResults.innerHTML = "";
+        const data = await apiFetch("get_events", { from, to });
+        if (!Array.isArray(data)) throw new Error("Resposta inesperada da API.");
+        apiCacheEvents = data;
+
+        const q = normalizeText(els.apiQuery.value);
+        const country = normalizeText(els.apiCountry.value);
+        let list = data.filter((e) => !isFinishedStatus(e.match_status));
+        if (country) {
+          list = list.filter((e) => normalizeText(e.country_name).includes(country));
+        }
+        if (q) {
+          list = list.filter((e) => {
+            const blob = normalizeText([
+              e.match_hometeam_name,
+              e.match_awayteam_name,
+              e.league_name,
+              e.country_name,
+            ].join(" "));
+            return blob.includes(q);
+          });
+        }
+
+        // Se filtro Brazil ficou vazio, mostra todos os não finalizados da busca textual.
+        if (!list.length && country && q) {
+          list = data.filter((e) => {
+            if (isFinishedStatus(e.match_status)) return false;
+            const blob = normalizeText([
+              e.match_hometeam_name,
+              e.match_awayteam_name,
+              e.league_name,
+              e.country_name,
+            ].join(" "));
+            return blob.includes(q);
+          });
+        }
+
+        list.sort((a, b) => String(a.match_date + a.match_time).localeCompare(String(b.match_date + b.match_time)));
+        renderApiResults(list.slice(0, 40));
+        setApiStatus(`${list.length} jogo(s) encontrados (mostrando até 40).`, list.length ? "ok" : "");
+      } catch (err) {
+        console.error(err);
+        setApiStatus(err.message || "Falha ao buscar jogos.", "err");
+      }
+    }
 
     function uid() {
       return Math.random().toString(36).slice(2, 9);
@@ -1161,6 +1473,7 @@
             <div class="match-top">
               <div class="match-title">
                 ${index + 1}. ${escapeHtml(m.home)} <span class="vs">x</span> ${escapeHtml(m.away)}
+                ${m.apiMeta ? `<div class="meta" style="font-size:0.78rem;color:var(--muted);font-family:var(--font-body);font-weight:500;margin-top:0.2rem;">${escapeHtml(m.apiMeta.league || "")}${m.apiMeta.bookmaker ? ` · odds: ${escapeHtml(m.apiMeta.bookmaker)}` : ""}</div>` : ""}
               </div>
               <button class="btn btn-danger" type="button" data-act="remove" data-match="${m.id}">Remover</button>
             </div>
@@ -1338,6 +1651,35 @@
       els.home.focus();
       renderAll();
     }
+
+    els.apiSearch.addEventListener("click", searchApiMatches);
+    els.apiQuery.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") searchApiMatches();
+    });
+    els.apiKey.addEventListener("change", () => {
+      saveApiKey(els.apiKey.value);
+      setApiStatus("Chave salva neste navegador.", "ok");
+    });
+    els.apiClearKey.addEventListener("click", () => {
+      els.apiKey.value = "";
+      saveApiKey("");
+      setApiStatus("Chave removida deste navegador.");
+    });
+    els.apiResults.addEventListener("click", async (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLElement)) return;
+      if (t.dataset.act !== "import-api") return;
+      const matchId = t.dataset.matchId;
+      t.disabled = true;
+      try {
+        await importApiMatch(matchId);
+      } catch (err) {
+        console.error(err);
+        setApiStatus(err.message || "Falha ao importar odds.", "err");
+      } finally {
+        t.disabled = false;
+      }
+    });
 
     els.addMatch.addEventListener("click", addMatch);
     [els.home, els.away].forEach((el) => {
@@ -1543,6 +1885,9 @@
     ];
 
     renderOddLegend();
+    initApiDates();
+    loadApiKey();
+    if (els.apiKey.value) setApiStatus("Chave carregada. Busque os jogos do período.", "ok");
     renderAll();
   </script>
 </body>
