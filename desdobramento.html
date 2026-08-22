@@ -706,9 +706,11 @@
     <section class="panel">
       <strong style="font-family: var(--font-display); font-size: 1.15rem;">Buscar odds (The Odds API)</strong>
       <p class="hint" style="margin-top: 0.35rem;">
-        Busca jogos e preenche <b>1 / X / 2</b> (h2h) e, se disponível, <b>1X / 12 / X2</b> (double_chance).
         Chave em <a href="https://the-odds-api.com/" target="_blank" rel="noopener" style="color:var(--accent);">the-odds-api.com</a>
-        · salva só no navegador. Free ~500 req/mês.
+        · free ~500 req/mês · salva no navegador.
+        <br /><b>Custo:</b> <b>Buscar jogos</b> = 1 crédito × nº de regiões (a liga inteira de uma vez, não por time).
+        <b>Importar 1X2</b> = <b>0</b> crédito extra (usa o cache da busca).
+        <b>Importar + dupla chance</b> = regiões × 2 mercados <b>por jogo</b>.
       </p>
       <div class="row">
         <div class="field" style="flex: 2 1 220px;">
@@ -735,11 +737,11 @@
         <div class="field">
           <label for="apiRegions">Região casas</label>
           <select id="apiRegions">
-            <option value="eu" selected>EU</option>
-            <option value="uk">UK</option>
-            <option value="eu,uk">EU + UK</option>
-            <option value="us">US</option>
-            <option value="au">AU</option>
+            <option value="eu" selected>EU (1 crédito)</option>
+            <option value="uk">UK (1 crédito)</option>
+            <option value="eu,uk">EU + UK (2 créditos)</option>
+            <option value="us">US (1 crédito)</option>
+            <option value="au">AU (1 crédito)</option>
           </select>
         </div>
       </div>
@@ -753,8 +755,8 @@
         <button class="btn btn-ghost" id="apiClearKey" type="button">Limpar chave</button>
       </div>
       <label class="checkline">
-        <input id="apiFetchDc" type="checkbox" checked />
-        Ao importar, buscar também dupla chance (gasta 1 crédito extra por jogo)
+        <input id="apiFetchDc" type="checkbox" />
+        Ao importar, buscar também dupla chance (caro: ~2 créditos por jogo na região EU)
       </label>
       <div class="api-status" id="apiStatus">Cole a chave The Odds API e busque uma liga (ex.: Brasil Série A).</div>
       <div class="api-results" id="apiResults"></div>
