@@ -711,6 +711,7 @@
         <br /><b>Custo:</b> <b>Buscar jogos</b> = 1 crédito × nº de regiões (a liga inteira de uma vez, não por time).
         <b>Importar 1X2</b> = <b>0</b> crédito extra (usa o cache da busca).
         <b>Importar + dupla chance</b> = regiões × 2 mercados <b>por jogo</b>.
+        No filtro de time, use vírgula: <b>Flamengo, Palmeiras, Remo</b> (não gasta crédito extra).
       </p>
       <div class="row">
         <div class="field" style="flex: 2 1 220px;">
@@ -1182,11 +1183,32 @@
       addMatchFromApi(event, oddsMap, bookName, event.sport_title);
     }
 
+    function regionCount() {
+      return String(els.apiRegions.value || "eu")
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean).length || 1;
+    }
+
+    function searchCost() {
+      // /odds cost = regions × markets; we only request h2h
+      return regionCount() * 1;
+    }
+
+    function dcImportCost() {
+      // event odds with h2h + double_chance
+      return regionCount() * 2;
+    }
+
     function renderApiResults(events) {
       if (!events.length) {
         els.apiResults.innerHTML = `<div class="empty">Nenhum jogo encontrado nesse filtro.</div>`;
         return;
       }
+      const wantDc = !!els.apiFetchDc.checked;
+      const btnLabel = wantDc
+        ? `Importar + DC (~${dcImportCost()} créd.)`
+        : "Importar 1X2 (0 créd.)";
       els.apiResults.innerHTML = events.map((e) => {
         const when = formatKickoff(e.commence_time);
         const books = (e.bookmakers || []).length;
@@ -1198,7 +1220,7 @@
               <div class="meta">${escapeHtml(tip)} · ${escapeHtml(when)} · ${books} casa(s)</div>
             </div>
             <button class="btn btn-primary" type="button" data-act="import-api" data-match-id="${escapeHtml(e.id)}">
-              Importar odds
+              ${btnLabel}
             </button>
           </article>
         `;
@@ -1209,7 +1231,7 @@
       const sport = els.apiSport.value || "soccer_brazil_campeonato";
       const regions = els.apiRegions.value || "eu";
       try {
-        setApiStatus("Buscando odds (h2h)...");
+        setApiStatus(`Buscando odds h2h da liga (~${searchCost()} crédito(s))...`);
         els.apiResults.innerHTML = "";
         const { data, quota } = await oddsApiGet(`/sports/${encodeURIComponent(sport)}/odds`, {
           regions,
@@ -1219,12 +1241,16 @@
         if (!Array.isArray(data)) throw new Error("Resposta inesperada da API.");
         apiCacheEvents = data;
 
-        const q = normalizeText(els.apiQuery.value);
+        const qRaw = els.apiQuery.value;
+        const terms = String(qRaw || "")
+          .split(/[,;|]/)
+          .map((t) => normalizeText(t))
+          .filter(Boolean);
         let list = data.slice();
-        if (q) {
+        if (terms.length) {
           list = list.filter((e) => {
             const blob = normalizeText([e.home_team, e.away_team, e.sport_title, e.sport_key].join(" "));
-            return blob.includes(q);
+            return terms.some((term) => blob.includes(term));
           });
         }
         list.sort((a, b) => String(a.commence_time || "").localeCompare(String(b.commence_time || "")));
@@ -1235,11 +1261,15 @@
           return;
         }
         if (!list.length) {
-          setApiStatus(`Nada para "${els.apiQuery.value}". Mostrando a lista completa da liga.`, "err");
+          setApiStatus(`Nada para "${qRaw}". Mostrando a lista completa da liga.`, "err");
           renderApiResults(data.slice(0, 40));
           return;
         }
-        setApiStatus(`${list.length} jogo(s) · ${sport} · região ${regions}${quota}`, "ok");
+        const filterTxt = terms.length ? ` · filtro: ${terms.join(" | ")}` : "";
+        setApiStatus(
+          `${list.length} jogo(s) em cache${filterTxt} · importar 1X2 agora é grátis · busca custou ~${searchCost()} créd.${quota}`,
+          "ok"
+        );
       } catch (err) {
         console.error(err);
         setApiStatus(err.message || "Falha ao buscar jogos.", "err");
@@ -1757,6 +1787,13 @@
 
     els.apiSearch.addEventListener("click", searchApiMatches);
     els.apiLoadSports.addEventListener("click", loadSoccerSports);
+    els.apiFetchDc.addEventListener("change", () => {
+      if (apiCacheEvents.length) renderApiResults(
+        els.apiQuery.value
+          ? apiCacheEvents.filter((e) => normalizeText([e.home_team, e.away_team].join(" ")).includes(normalizeText(els.apiQuery.value)))
+          : apiCacheEvents
+      );
+    });
     els.apiQuery.addEventListener("keydown", (e) => {
       if (e.key === "Enter") searchApiMatches();
     });
