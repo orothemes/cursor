@@ -1788,11 +1788,18 @@
     els.apiSearch.addEventListener("click", searchApiMatches);
     els.apiLoadSports.addEventListener("click", loadSoccerSports);
     els.apiFetchDc.addEventListener("change", () => {
-      if (apiCacheEvents.length) renderApiResults(
-        els.apiQuery.value
-          ? apiCacheEvents.filter((e) => normalizeText([e.home_team, e.away_team].join(" ")).includes(normalizeText(els.apiQuery.value)))
-          : apiCacheEvents
-      );
+      if (!apiCacheEvents.length) return;
+      const terms = String(els.apiQuery.value || "")
+        .split(/[,;|]/)
+        .map((t) => normalizeText(t))
+        .filter(Boolean);
+      const list = terms.length
+        ? apiCacheEvents.filter((e) => {
+            const blob = normalizeText([e.home_team, e.away_team].join(" "));
+            return terms.some((term) => blob.includes(term));
+          })
+        : apiCacheEvents;
+      renderApiResults(list);
     });
     els.apiQuery.addEventListener("keydown", (e) => {
       if (e.key === "Enter") searchApiMatches();
