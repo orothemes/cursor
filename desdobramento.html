@@ -655,6 +655,82 @@
     .api-status.ok { color: var(--ok); }
     .api-status.caution { color: var(--warn); }
 
+    .history-list {
+      display: grid;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .history-pkg {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.85rem 0.95rem;
+      background: rgba(0,0,0,0.22);
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .history-pkg.pending { border-color: rgba(255, 180, 84, 0.35); }
+    .history-pkg.won { border-color: rgba(109, 255, 176, 0.35); }
+    .history-pkg.lost { border-color: rgba(255, 122, 122, 0.3); }
+
+    .history-pkg-head {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.55rem;
+      align-items: baseline;
+    }
+
+    .history-pkg-head strong {
+      font-family: var(--font-display);
+    }
+
+    .history-ticket {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.65rem 0.75rem;
+      background: rgba(255,255,255,0.02);
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .history-ticket.green {
+      border-color: rgba(109, 255, 176, 0.35);
+      background: rgba(109, 255, 176, 0.06);
+    }
+    .history-ticket.red {
+      border-color: rgba(255, 122, 122, 0.28);
+      background: rgba(255, 122, 122, 0.05);
+    }
+
+    .settle-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .settle-actions .btn {
+      padding: 0.4rem 0.65rem;
+      font-size: 0.8rem;
+    }
+
+    .btn-ok {
+      background: rgba(109, 255, 176, 0.16);
+      color: var(--ok);
+      border: 1px solid rgba(109, 255, 176, 0.35);
+    }
+    .btn-bad {
+      background: rgba(255, 122, 122, 0.12);
+      color: var(--danger);
+      border: 1px solid rgba(255, 122, 122, 0.35);
+    }
+    .btn-wait {
+      background: rgba(255, 180, 84, 0.12);
+      color: var(--warn);
+      border: 1px solid rgba(255, 180, 84, 0.35);
+    }
+
     @keyframes rise {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
@@ -823,7 +899,8 @@
         </div>
         <div class="footer-actions" style="margin-top: 0;">
           <button class="btn btn-ghost" id="copyTickets" type="button">Copiar bilhetes</button>
-          <button class="btn btn-primary" id="exportCsv" type="button">Exportar CSV</button>
+          <button class="btn btn-ghost" id="exportCsv" type="button">Exportar CSV</button>
+          <button class="btn btn-primary" id="savePackage" type="button">Salvar pacote</button>
         </div>
       </div>
 
@@ -840,6 +917,42 @@
       <div id="packageAdvice" class="advice-box" hidden></div>
       <div class="tickets" id="tickets">
         <div class="empty">Adicione jogos e marque 1 / X / 2 para desdobrar.</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="row" style="justify-content: space-between; align-items: center;">
+        <div>
+          <strong style="font-family: var(--font-display); font-size: 1.25rem;">Histórico / conferência</strong>
+          <p class="hint" style="margin-top: 0.25rem;">
+            Salve o pacote ao faturar. Depois marque green/red em cada bilhete pra ver se no longo prazo compensa.
+          </p>
+        </div>
+        <div class="footer-actions" style="margin-top: 0;">
+          <button class="btn btn-ghost" id="exportHistory" type="button">Exportar histórico</button>
+          <button class="btn btn-danger" id="clearHistory" type="button">Limpar histórico</button>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top: 0.75rem;">
+        <div class="field" style="flex: 2 1 220px;">
+          <label for="packageNote">Nota do pacote (opcional)</label>
+          <input id="packageNote" type="text" placeholder="Ex: rodada domingo · âncora Flu · teste DC" />
+        </div>
+      </div>
+
+      <div class="stats" style="margin-top: 0.9rem;">
+        <div class="stat"><div class="k">Pacotes</div><div class="v" id="histPackages">0</div></div>
+        <div class="stat"><div class="k">Apostado</div><div class="v" id="histStaked">R$ 0,00</div></div>
+        <div class="stat"><div class="k">Retorno</div><div class="v" id="histReturned">R$ 0,00</div></div>
+        <div class="stat"><div class="k">Lucro</div><div class="v" id="histProfit">R$ 0,00</div></div>
+        <div class="stat"><div class="k">ROI</div><div class="v" id="histRoi">—</div></div>
+        <div class="stat"><div class="k">Pacotes green</div><div class="v" id="histWinRate">—</div></div>
+      </div>
+
+      <div id="historyAdvice" class="advice-box" hidden></div>
+      <div class="history-list" id="historyList">
+        <div class="empty">Nenhum pacote salvo ainda. Gere bilhetes e clique em Salvar pacote.</div>
       </div>
     </section>
   </div>
@@ -927,6 +1040,18 @@
       statCover: document.getElementById("statCover"),
       copyTickets: document.getElementById("copyTickets"),
       exportCsv: document.getElementById("exportCsv"),
+      savePackage: document.getElementById("savePackage"),
+      packageNote: document.getElementById("packageNote"),
+      exportHistory: document.getElementById("exportHistory"),
+      clearHistory: document.getElementById("clearHistory"),
+      historyList: document.getElementById("historyList"),
+      historyAdvice: document.getElementById("historyAdvice"),
+      histPackages: document.getElementById("histPackages"),
+      histStaked: document.getElementById("histStaked"),
+      histReturned: document.getElementById("histReturned"),
+      histProfit: document.getElementById("histProfit"),
+      histRoi: document.getElementById("histRoi"),
+      histWinRate: document.getElementById("histWinRate"),
       modes: [...document.querySelectorAll(".mode")],
       apiKey: document.getElementById("apiKey"),
       apiSport: document.getElementById("apiSport"),
@@ -942,7 +1067,9 @@
 
     const API_BASE = "https://api.the-odds-api.com/v4";
     const API_KEY_STORAGE = "desdobra_oddsapi_key";
+    const HISTORY_STORAGE = "desdobra_history_v1";
     let apiCacheEvents = [];
+    let historyPackages = [];
 
     function setApiStatus(msg, kind = "") {
       els.apiStatus.textContent = msg;
@@ -2007,6 +2134,278 @@
       URL.revokeObjectURL(url);
     });
 
+    function loadHistory() {
+      try {
+        const raw = localStorage.getItem(HISTORY_STORAGE);
+        historyPackages = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(historyPackages)) historyPackages = [];
+      } catch (_) {
+        historyPackages = [];
+      }
+    }
+
+    function saveHistory() {
+      localStorage.setItem(HISTORY_STORAGE, JSON.stringify(historyPackages));
+    }
+
+    function packageStake(pkg) {
+      return (pkg.tickets || []).reduce((acc, t) => acc + (Number(t.stake) || 0), 0);
+    }
+
+    function packageReturned(pkg) {
+      return (pkg.tickets || []).reduce((acc, t) => {
+        if (t.status === "green" && t.odd != null) return acc + (Number(t.stake) || 0) * Number(t.odd);
+        return acc;
+      }, 0);
+    }
+
+    function isPackageSettled(pkg) {
+      return (pkg.tickets || []).every((t) => t.status === "green" || t.status === "red");
+    }
+
+    function historyTotals() {
+      const settled = historyPackages.filter(isPackageSettled);
+      const stakedAll = historyPackages.reduce((a, p) => a + packageStake(p), 0);
+      const returnedAll = historyPackages.reduce((a, p) => a + packageReturned(p), 0);
+      // For ROI de longo prazo, conta só pacotes fechados (sem pending)
+      const stakedSettled = settled.reduce((a, p) => a + packageStake(p), 0);
+      const returnedSettled = settled.reduce((a, p) => a + packageReturned(p), 0);
+      const profitSettled = returnedSettled - stakedSettled;
+      const greens = settled.filter((p) => packageReturned(p) > 0).length;
+      return {
+        count: historyPackages.length,
+        settledCount: settled.length,
+        stakedAll,
+        returnedAll,
+        stakedSettled,
+        returnedSettled,
+        profitSettled,
+        roi: stakedSettled > 0 ? (profitSettled / stakedSettled) * 100 : null,
+        winRate: settled.length ? (greens / settled.length) * 100 : null,
+        greens,
+      };
+    }
+
+    function saveCurrentPackage() {
+      const tickets = window.__lastTickets || [];
+      if (!tickets.length) {
+        alert("Gere bilhetes antes de salvar o pacote.");
+        return;
+      }
+      const missingOdds = tickets.some((t) => t.odd == null);
+      if (missingOdds && !confirm("Alguns bilhetes estão sem odd. Salvar mesmo assim?")) return;
+
+      const pkg = {
+        id: uid(),
+        createdAt: new Date().toISOString(),
+        note: (els.packageNote.value || "").trim(),
+        mode: state.mode,
+        stakePackage: Number(els.stake.value) || tickets.reduce((a, t) => a + t.unit, 0),
+        tickets: tickets.map((t) => ({
+          id: t.id,
+          stake: Number(t.unit) || 0,
+          odd: t.odd,
+          status: "pending",
+          legs: (t.legs || []).map((l) => ({
+            home: l.home,
+            away: l.away,
+            result: l.result,
+            odd: l.odd,
+            isAnchor: !!l.isAnchor,
+          })),
+        })),
+      };
+      historyPackages.unshift(pkg);
+      saveHistory();
+      els.packageNote.value = "";
+      els.savePackage.textContent = "Salvo!";
+      setTimeout(() => { els.savePackage.textContent = "Salvar pacote"; }, 1200);
+      renderHistory();
+    }
+
+    function settleTicket(pkgId, ticketId, status) {
+      const pkg = historyPackages.find((p) => p.id === pkgId);
+      if (!pkg) return;
+      const ticket = (pkg.tickets || []).find((t) => String(t.id) === String(ticketId));
+      if (!ticket) return;
+      ticket.status = status;
+      ticket.settledAt = new Date().toISOString();
+      saveHistory();
+      renderHistory();
+    }
+
+    function settleAllRed(pkgId) {
+      const pkg = historyPackages.find((p) => p.id === pkgId);
+      if (!pkg) return;
+      pkg.tickets.forEach((t) => {
+        t.status = "red";
+        t.settledAt = new Date().toISOString();
+      });
+      saveHistory();
+      renderHistory();
+    }
+
+    function deletePackage(pkgId) {
+      historyPackages = historyPackages.filter((p) => p.id !== pkgId);
+      saveHistory();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const totals = historyTotals();
+      els.histPackages.textContent = String(totals.count);
+      els.histStaked.textContent = money(totals.stakedSettled || 0);
+      els.histReturned.textContent = money(totals.returnedSettled || 0);
+      els.histProfit.textContent = money(totals.profitSettled || 0);
+      els.histRoi.textContent = totals.roi == null ? "—" : `${totals.roi.toFixed(1)}%`;
+      els.histWinRate.textContent = totals.winRate == null
+        ? "—"
+        : `${totals.greens}/${totals.settledCount} (${totals.winRate.toFixed(0)}%)`;
+
+      if (totals.settledCount >= 5) {
+        els.historyAdvice.hidden = false;
+        const level = totals.roi > 0 ? "good" : totals.roi > -10 ? "caution" : "bad";
+        els.historyAdvice.className = `advice-box ${level}`;
+        els.historyAdvice.innerHTML = `
+          <div class="title">${totals.roi > 0 ? "No lucro (pacotes fechados)" : "No prejuízo (pacotes fechados)"}</div>
+          <div class="msg">
+            ROI ${totals.roi.toFixed(1)}% em ${totals.settledCount} pacotes liquidados.
+            ${totals.roi > 0
+              ? "Amostra ainda pequena, mas o sinal está positivo — continue registrando."
+              : "Continue registrando. Se após 20–30 pacotes o ROI continuar negativo, o formato precisa ajuste."}
+            Pendentes não entram no ROI.
+          </div>
+        `;
+      } else if (totals.count) {
+        els.historyAdvice.hidden = false;
+        els.historyAdvice.className = "advice-box caution";
+        els.historyAdvice.innerHTML = `
+          <div class="title">Amostra pequena</div>
+          <div class="msg">Feche pelo menos 5 pacotes (marcar green/red) pra ler o ROI com um mínimo de confiança.</div>
+        `;
+      } else {
+        els.historyAdvice.hidden = true;
+      }
+
+      if (!historyPackages.length) {
+        els.historyList.innerHTML = `<div class="empty">Nenhum pacote salvo ainda. Gere bilhetes e clique em Salvar pacote.</div>`;
+        return;
+      }
+
+      els.historyList.innerHTML = historyPackages.map((pkg) => {
+        const staked = packageStake(pkg);
+        const returned = packageReturned(pkg);
+        const profit = returned - staked;
+        const settled = isPackageSettled(pkg);
+        const status = !settled ? "pending" : returned > 0 ? "won" : "lost";
+        const when = new Date(pkg.createdAt).toLocaleString("pt-BR");
+        const note = pkg.note ? ` · ${escapeHtml(pkg.note)}` : "";
+        const ticketsHtml = (pkg.tickets || []).map((t) => {
+          const oddTxt = t.odd != null ? Number(t.odd).toFixed(2) : "sem odd";
+          const pot = t.odd != null ? money((Number(t.stake) || 0) * Number(t.odd)) : "—";
+          const st = t.status || "pending";
+          const legs = (t.legs || [])
+            .map((l) => `${escapeHtml(l.home)} x ${escapeHtml(l.away)} → <b>${escapeHtml(l.result)}</b>${l.isAnchor ? " · ÂNCORA" : ""}`)
+            .join(" · ");
+          return `
+            <div class="history-ticket ${st === "green" ? "green" : st === "red" ? "red" : ""}">
+              <div class="ticket-head">
+                <strong>#${t.id} · ${st.toUpperCase()}</strong>
+                <div class="ticket-meta">Stake <b>${money(t.stake || 0)}</b> · Odd <b>${oddTxt}</b> · Potencial <b>${pot}</b></div>
+              </div>
+              <div style="font-size:0.84rem;color:var(--muted);">${legs}</div>
+              <div class="settle-actions">
+                <button class="btn btn-ok" type="button" data-hist="settle" data-pkg="${pkg.id}" data-ticket="${t.id}" data-status="green">Green</button>
+                <button class="btn btn-bad" type="button" data-hist="settle" data-pkg="${pkg.id}" data-ticket="${t.id}" data-status="red">Red</button>
+                <button class="btn btn-wait" type="button" data-hist="settle" data-pkg="${pkg.id}" data-ticket="${t.id}" data-status="pending">Pendente</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        return `
+          <article class="history-pkg ${status}">
+            <div class="history-pkg-head">
+              <div>
+                <strong>${when}</strong>${note}
+                <div class="hint" style="margin:0.2rem 0 0;">Modo ${escapeHtml(pkg.mode || "—")} · ${pkg.tickets.length} bilhete(s)</div>
+              </div>
+              <div class="ticket-meta">
+                Stake <b>${money(staked)}</b> · Retorno <b>${money(returned)}</b> · Lucro <b style="color:${profit >= 0 ? "var(--ok)" : "var(--danger)"}">${money(profit)}</b>
+              </div>
+            </div>
+            <div class="settle-actions">
+              <button class="btn btn-bad" type="button" data-hist="all-red" data-pkg="${pkg.id}">Marcar pacote todo red</button>
+              <button class="btn btn-danger" type="button" data-hist="delete" data-pkg="${pkg.id}">Excluir</button>
+            </div>
+            ${ticketsHtml}
+          </article>
+        `;
+      }).join("");
+    }
+
+    els.savePackage.addEventListener("click", saveCurrentPackage);
+    els.clearHistory.addEventListener("click", () => {
+      if (!historyPackages.length) return;
+      if (!confirm("Apagar todo o histórico deste navegador?")) return;
+      historyPackages = [];
+      saveHistory();
+      renderHistory();
+    });
+    els.exportHistory.addEventListener("click", () => {
+      if (!historyPackages.length) return;
+      const rows = [["pacote_id", "data", "nota", "modo", "bilhete", "status", "stake", "odd", "retorno", "pernas"]];
+      for (const pkg of historyPackages) {
+        for (const t of pkg.tickets || []) {
+          const retorno = t.status === "green" && t.odd != null
+            ? ((Number(t.stake) || 0) * Number(t.odd)).toFixed(2)
+            : "0";
+          const pernas = (t.legs || [])
+            .map((l) => `${l.home} x ${l.away}:${l.result}${l.odd != null ? `@${l.odd}` : ""}`)
+            .join(" / ");
+          rows.push([
+            pkg.id,
+            pkg.createdAt,
+            pkg.note || "",
+            pkg.mode || "",
+            t.id,
+            t.status || "pending",
+            Number(t.stake || 0).toFixed(2),
+            t.odd != null ? Number(t.odd).toFixed(4) : "",
+            retorno,
+            pernas,
+          ]);
+        }
+      }
+      const csv = rows.map((r) => r.map((c) => `"${String(c).replaceAll('"', '""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "desdobra-historico.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    els.historyList.addEventListener("click", (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLElement)) return;
+      const act = t.dataset.hist;
+      const pkgId = t.dataset.pkg;
+      if (!act || !pkgId) return;
+      if (act === "settle") {
+        settleTicket(pkgId, t.dataset.ticket, t.dataset.status);
+        return;
+      }
+      if (act === "all-red") {
+        if (confirm("Marcar todos os bilhetes deste pacote como red?")) settleAllRed(pkgId);
+        return;
+      }
+      if (act === "delete") {
+        if (confirm("Excluir este pacote do histórico?")) deletePackage(pkgId);
+      }
+    });
+
     // Exemplos iniciais pra já entender o fluxo
     state.matches = [
       {
@@ -2034,6 +2433,8 @@
 
     renderOddLegend();
     loadApiKey();
+    loadHistory();
+    renderHistory();
     if (els.apiKey.value) {
       setApiStatus("Chave carregada. Pode buscar Brasil Série A / B ou atualizar ligas.", "ok");
     }

@@ -26,3 +26,10 @@ Abra o arquivo `desdobramento.html` no navegador (duplo clique ou sirva a pasta 
 5. O Desdobra preenche `1/X/2` e, se marcado, busca `1X/12/X2`
 
 A chave fica apenas no `localStorage` do navegador.
+
+## Histórico / conferência
+
+1. Monte o desdobro e clique em **Salvar pacote**
+2. Depois do jogo, marque cada bilhete como **Green** ou **Red**
+3. O painel mostra apostado, retorno, lucro e **ROI** (só pacotes já liquidados)
+4. Exporte o histórico em CSV quando quiser analisar fora
