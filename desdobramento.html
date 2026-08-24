@@ -1,0 +1,2444 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Desdobra — Sistema de Apostas 1X2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg0: #0b1210;
+      --bg1: #122019;
+      --bg2: #1a2e24;
+      --ink: #eef6f0;
+      --muted: #9bb0a3;
+      --line: rgba(238, 246, 240, 0.12);
+      --accent: #c8f560;
+      --accent-ink: #132016;
+      --warn: #ffb454;
+      --danger: #ff7a7a;
+      --ok: #6dffb0;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+      --radius: 18px;
+      --font-display: "Syne", sans-serif;
+      --font-body: "DM Sans", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: var(--font-body);
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(200, 245, 96, 0.16), transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, rgba(109, 255, 176, 0.08), transparent 50%),
+        linear-gradient(165deg, var(--bg0), var(--bg1) 45%, #0e1814 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.04;
+      background-image:
+        linear-gradient(rgba(255,255,255,.35) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.35) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(circle at 50% 20%, black, transparent 75%);
+    }
+
+    .wrap {
+      width: min(1100px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 2rem 0 4rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    header {
+      display: grid;
+      gap: 0.75rem;
+      margin-bottom: 1.75rem;
+      animation: rise 0.55s ease both;
+    }
+
+    .brand {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: clamp(2.4rem, 6vw, 3.6rem);
+      letter-spacing: -0.04em;
+      line-height: 0.95;
+      margin: 0;
+    }
+
+    .brand span { color: var(--accent); }
+
+    .lead {
+      margin: 0;
+      max-width: 46rem;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.5;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(26, 46, 36, 0.92), rgba(14, 24, 20, 0.92));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.1rem;
+      animation: rise 0.65s ease both;
+    }
+
+    .panel + .panel { margin-top: 1rem; }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: end;
+    }
+
+    .field {
+      display: grid;
+      gap: 0.35rem;
+      flex: 1 1 140px;
+    }
+
+    label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    input, select, button, textarea {
+      font: inherit;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: rgba(0, 0, 0, 0.28);
+      color: var(--ink);
+      border-radius: 12px;
+      padding: 0.78rem 0.9rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: rgba(200, 245, 96, 0.65);
+      box-shadow: 0 0 0 3px rgba(200, 245, 96, 0.15);
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 0.82rem 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s ease, filter 0.15s ease, background 0.15s ease;
+    }
+
+    .btn:active { transform: translateY(1px) scale(0.98); }
+    .btn-primary {
+      background: var(--accent);
+      color: var(--accent-ink);
+    }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.04); }
+    .btn-danger {
+      background: rgba(255, 122, 122, 0.12);
+      color: var(--danger);
+      border: 1px solid rgba(255, 122, 122, 0.35);
+    }
+
+    .modes {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.9rem;
+    }
+
+    .mode {
+      text-align: left;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,0.22);
+      border-radius: 14px;
+      padding: 0.9rem 1rem;
+      cursor: pointer;
+      color: inherit;
+      transition: border-color 0.2s, background 0.2s, transform 0.2s;
+    }
+
+    .mode:hover { transform: translateY(-1px); }
+    .mode.active {
+      border-color: rgba(200, 245, 96, 0.7);
+      background: rgba(200, 245, 96, 0.08);
+    }
+    .mode strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      margin-bottom: 0.25rem;
+    }
+    .mode p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }
+
+    .matches { display: grid; gap: 0.8rem; margin-top: 1rem; }
+
+    .match {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 0.9rem;
+      background: rgba(0,0,0,0.18);
+      animation: rise 0.4s ease both;
+    }
+
+    .match.is-anchor {
+      border-color: rgba(200, 245, 96, 0.55);
+      box-shadow: inset 0 0 0 1px rgba(200, 245, 96, 0.15);
+    }
+
+    .match-top {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    .match-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .vs {
+      color: var(--muted);
+      font-weight: 600;
+      padding: 0 0.2rem;
+    }
+
+    .outcomes {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+
+    .market-block {
+      margin-top: 0.75rem;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .market-block:first-of-type { margin-top: 0; }
+
+    .market-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .outcome.dc.on {
+      border-color: rgba(140, 180, 255, 0.55);
+      background: rgba(140, 180, 255, 0.08);
+    }
+
+    .outcome.dc.on .chip {
+      background: #9ec0ff;
+      color: #0f1a2a;
+    }
+
+    .quick-dc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.55rem;
+    }
+
+    .quick-dc .btn {
+      padding: 0.45rem 0.7rem;
+      font-size: 0.8rem;
+    }
+
+    .outcome {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.65rem;
+      background: rgba(255,255,255,0.02);
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .outcome.on {
+      border-color: rgba(200, 245, 96, 0.55);
+      background: rgba(200, 245, 96, 0.08);
+    }
+
+    .outcome-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.4rem;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2rem;
+      height: 1.7rem;
+      padding: 0 0.55rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .outcome.on .chip { background: var(--accent); color: var(--accent-ink); }
+
+    .toggle {
+      appearance: none;
+      width: 1.35rem;
+      height: 1.35rem;
+      border-radius: 7px;
+      border: 1.5px solid rgba(238, 246, 240, 0.35);
+      background: rgba(0, 0, 0, 0.25);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      margin: 0;
+    }
+    .toggle:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .toggle:checked::after {
+      content: "";
+      width: 0.38rem;
+      height: 0.7rem;
+      border: solid var(--accent-ink);
+      border-width: 0 2.5px 2.5px 0;
+      transform: rotate(45deg) translate(-1px, -1px);
+    }
+
+    .outcome input[type="number"] {
+      padding: 0.5rem 0.6rem;
+      border-radius: 10px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .match-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      align-items: center;
+    }
+
+    .anchor-btn {
+      font-size: 0.85rem;
+      padding: 0.55rem 0.8rem;
+    }
+
+    .anchor-btn.active {
+      background: var(--accent);
+      color: var(--accent-ink);
+      border-color: transparent;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.4;
+      margin: 0.85rem 0 0;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 1rem;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.8rem;
+      background: rgba(0,0,0,0.2);
+    }
+    .stat .k {
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      font-weight: 600;
+    }
+    .stat .v {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      margin-top: 0.2rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tickets {
+      display: grid;
+      gap: 0.65rem;
+      margin-top: 1rem;
+    }
+
+    .ticket {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.85rem 0.95rem;
+      background: rgba(0,0,0,0.22);
+      display: grid;
+      gap: 0.55rem;
+      animation: rise 0.35s ease both;
+    }
+
+    .ticket-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      align-items: baseline;
+    }
+
+    .ticket-head strong {
+      font-family: var(--font-display);
+      font-size: 1rem;
+    }
+
+    .ticket-meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ticket-meta b { color: var(--accent); font-weight: 700; }
+
+    .legs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .leg {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.35rem 0.65rem;
+      font-size: 0.84rem;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .leg.anchor-leg {
+      border-color: rgba(200, 245, 96, 0.5);
+      background: rgba(200, 245, 96, 0.1);
+    }
+
+    .empty {
+      color: var(--muted);
+      padding: 1.2rem 0.2rem;
+      text-align: center;
+    }
+
+    .warn {
+      margin-top: 0.8rem;
+      color: var(--warn);
+      font-size: 0.9rem;
+    }
+
+    .warn.danger { color: var(--danger); }
+    .warn.ok { color: var(--ok); }
+
+    .footer-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+      margin-top: 0.9rem;
+    }
+
+    .legend-item {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.65rem 0.75rem;
+      background: rgba(0,0,0,0.18);
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+
+    .legend-item strong {
+      display: block;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 0.15rem;
+    }
+
+    .odd-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-top: 0.15rem;
+      padding: 0.2rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      border: 1px solid transparent;
+      width: fit-content;
+      max-width: 100%;
+    }
+
+    .odd-tag.extreme {
+      color: #ffd0d0;
+      background: rgba(255, 122, 122, 0.14);
+      border-color: rgba(255, 122, 122, 0.35);
+    }
+    .odd-tag.super {
+      color: #ffd9a8;
+      background: rgba(255, 180, 84, 0.14);
+      border-color: rgba(255, 180, 84, 0.35);
+    }
+    .odd-tag.strong {
+      color: #d9f7a8;
+      background: rgba(200, 245, 96, 0.12);
+      border-color: rgba(200, 245, 96, 0.35);
+    }
+    .odd-tag.moderate {
+      color: #b8f0d4;
+      background: rgba(109, 255, 176, 0.1);
+      border-color: rgba(109, 255, 176, 0.3);
+    }
+    .odd-tag.light {
+      color: #cfe3ff;
+      background: rgba(140, 180, 255, 0.12);
+      border-color: rgba(140, 180, 255, 0.3);
+    }
+    .odd-tag.under {
+      color: #e7d4ff;
+      background: rgba(190, 150, 255, 0.12);
+      border-color: rgba(190, 150, 255, 0.3);
+    }
+
+    .advice-box {
+      margin-top: 0.85rem;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.8rem 0.9rem;
+      background: rgba(0,0,0,0.22);
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .advice-box .title {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+    }
+
+    .advice-box .msg { color: var(--muted); font-size: 0.88rem; line-height: 1.4; }
+    .advice-box.good { border-color: rgba(109, 255, 176, 0.4); }
+    .advice-box.caution { border-color: rgba(255, 180, 84, 0.45); }
+    .advice-box.bad { border-color: rgba(255, 122, 122, 0.45); }
+
+    .checkline {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      margin-top: 0.75rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .checkline input {
+      width: 1.15rem;
+      height: 1.15rem;
+      accent-color: var(--accent);
+    }
+
+    .ticket.covers {
+      border-color: rgba(109, 255, 176, 0.35);
+    }
+
+    .ticket.no-cover {
+      border-color: rgba(255, 122, 122, 0.28);
+    }
+
+    .cover-pill {
+      display: inline-flex;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-left: 0.35rem;
+    }
+    .cover-pill.yes {
+      background: rgba(109, 255, 176, 0.15);
+      color: var(--ok);
+    }
+    .cover-pill.no {
+      background: rgba(255, 122, 122, 0.12);
+      color: var(--danger);
+    }
+
+    .anchor-meta {
+      margin-top: 0.55rem;
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+
+    .api-results {
+      display: grid;
+      gap: 0.5rem;
+      margin-top: 0.85rem;
+      max-height: 340px;
+      overflow: auto;
+    }
+
+    .api-match {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.7rem 0.8rem;
+      background: rgba(0,0,0,0.2);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .api-match .meta {
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .api-match .title {
+      font-weight: 700;
+      font-family: var(--font-display);
+    }
+
+    .api-status {
+      margin-top: 0.65rem;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+    .api-status.err { color: var(--danger); }
+    .api-status.ok { color: var(--ok); }
+    .api-status.caution { color: var(--warn); }
+
+    .history-list {
+      display: grid;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .history-pkg {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.85rem 0.95rem;
+      background: rgba(0,0,0,0.22);
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .history-pkg.pending { border-color: rgba(255, 180, 84, 0.35); }
+    .history-pkg.won { border-color: rgba(109, 255, 176, 0.35); }
+    .history-pkg.lost { border-color: rgba(255, 122, 122, 0.3); }
+
+    .history-pkg-head {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.55rem;
+      align-items: baseline;
+    }
+
+    .history-pkg-head strong {
+      font-family: var(--font-display);
+    }
+
+    .history-ticket {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.65rem 0.75rem;
+      background: rgba(255,255,255,0.02);
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .history-ticket.green {
+      border-color: rgba(109, 255, 176, 0.35);
+      background: rgba(109, 255, 176, 0.06);
+    }
+    .history-ticket.red {
+      border-color: rgba(255, 122, 122, 0.28);
+      background: rgba(255, 122, 122, 0.05);
+    }
+
+    .settle-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .settle-actions .btn {
+      padding: 0.4rem 0.65rem;
+      font-size: 0.8rem;
+    }
+
+    .btn-ok {
+      background: rgba(109, 255, 176, 0.16);
+      color: var(--ok);
+      border: 1px solid rgba(109, 255, 176, 0.35);
+    }
+    .btn-bad {
+      background: rgba(255, 122, 122, 0.12);
+      color: var(--danger);
+      border: 1px solid rgba(255, 122, 122, 0.35);
+    }
+    .btn-wait {
+      background: rgba(255, 180, 84, 0.12);
+      color: var(--warn);
+      border: 1px solid rgba(255, 180, 84, 0.35);
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 800px) {
+      .modes, .stats, .outcomes, .legend { grid-template-columns: 1fr; }
+      .outcomes { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1 class="brand">Desdobra<span>.</span></h1>
+      <p class="lead">
+        Coloque os jogos, marque <strong>1 / X / 2</strong> ou <strong>dupla chance (1X / 12 / X2)</strong> e gere o desdobramento.
+        No modo âncora, a fixa pode ser resultado final ou dupla chance; o resto desdobra em cima disso.
+      </p>
+    </header>
+
+    <section class="panel">
+      <strong style="font-family: var(--font-display); font-size: 1.15rem;">Esquema de odds</strong>
+      <p class="hint" style="margin-top: 0.35rem;">
+        Âncora ideal: <b style="color: var(--accent);">1.50 – 1.85</b>.
+        Abaixo de 1.40 come o pacote; acima de 2.20 já é seleção normal, não fixa.
+      </p>
+      <div class="legend" id="oddLegend"></div>
+      <div class="row" style="margin-top: 0.85rem;">
+        <div class="field">
+          <label for="minAnchorOdd">Âncora mínima</label>
+          <input id="minAnchorOdd" type="number" min="1.01" step="0.01" value="1.50" />
+        </div>
+        <div class="field">
+          <label for="maxAnchorOdd">Âncora máxima ideal</label>
+          <input id="maxAnchorOdd" type="number" min="1.01" step="0.01" value="1.85" />
+        </div>
+        <div class="field">
+          <label for="blockBelow">Bloquear abaixo de</label>
+          <input id="blockBelow" type="number" min="1.01" step="0.01" value="1.40" />
+        </div>
+      </div>
+      <label class="checkline">
+        <input id="enforceAnchorBand" type="checkbox" checked />
+        Bloquear geração se a âncora estiver abaixo do mínimo de bloqueio
+      </label>
+    </section>
+
+    <section class="panel">
+      <strong style="font-family: var(--font-display); font-size: 1.15rem;">Buscar odds (The Odds API)</strong>
+      <p class="hint" style="margin-top: 0.35rem;">
+        Chave em <a href="https://the-odds-api.com/" target="_blank" rel="noopener" style="color:var(--accent);">the-odds-api.com</a>
+        · free ~500 req/mês · salva no navegador.
+        <br /><b>Custo:</b> <b>Buscar jogos</b> = 1 crédito × nº de regiões (a liga inteira de uma vez, não por time).
+        <b>Importar 1X2</b> = <b>0</b> crédito extra (usa o cache da busca).
+        <b>Importar + dupla chance</b> = regiões × 2 mercados <b>por jogo</b>.
+        No filtro de time, use vírgula: <b>Flamengo, Palmeiras, Remo</b> (não gasta crédito extra).
+      </p>
+      <div class="row">
+        <div class="field" style="flex: 2 1 220px;">
+          <label for="apiKey">API key</label>
+          <input id="apiKey" type="password" autocomplete="off" placeholder="Cole sua chave The Odds API" />
+        </div>
+        <div class="field">
+          <label for="apiSport">Liga / esporte</label>
+          <select id="apiSport">
+            <option value="soccer_brazil_campeonato" selected>Brasil Série A</option>
+            <option value="soccer_brazil_serie_b">Brasil Série B</option>
+            <option value="soccer_uefa_champs_league">Champions League</option>
+            <option value="soccer_uefa_europa_league">Europa League</option>
+            <option value="soccer_epl">Inglaterra Premier League</option>
+            <option value="soccer_spain_la_liga">Espanha La Liga</option>
+            <option value="soccer_italy_serie_a">Itália Serie A</option>
+            <option value="soccer_germany_bundesliga">Alemanha Bundesliga</option>
+            <option value="soccer_france_ligue_one">França Ligue 1</option>
+            <option value="soccer_usa_mls">MLS</option>
+            <option value="soccer_argentina_primera_division">Argentina Primera</option>
+            <option value="upcoming">Upcoming (várias ligas)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="apiRegions">Região casas</label>
+          <select id="apiRegions">
+            <option value="eu" selected>EU (1 crédito)</option>
+            <option value="uk">UK (1 crédito)</option>
+            <option value="eu,uk">EU + UK (2 créditos)</option>
+            <option value="us">US (1 crédito)</option>
+            <option value="au">AU (1 crédito)</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="margin-top: 0.75rem;">
+        <div class="field" style="flex: 2 1 220px;">
+          <label for="apiQuery">Buscar time</label>
+          <input id="apiQuery" type="text" placeholder="Ex: Flamengo, Palmeiras, Fluminense" />
+        </div>
+        <button class="btn btn-primary" id="apiSearch" type="button">Buscar jogos</button>
+        <button class="btn btn-ghost" id="apiLoadSports" type="button">Atualizar ligas</button>
+        <button class="btn btn-ghost" id="apiClearKey" type="button">Limpar chave</button>
+      </div>
+      <label class="checkline">
+        <input id="apiFetchDc" type="checkbox" />
+        Ao importar, buscar também dupla chance (caro: ~2 créditos por jogo na região EU)
+      </label>
+      <div class="api-status" id="apiStatus">Cole a chave The Odds API e busque uma liga (ex.: Brasil Série A).</div>
+      <div class="api-results" id="apiResults"></div>
+    </section>
+
+    <section class="panel">
+      <div class="row">
+        <div class="field">
+          <label for="home">Time casa</label>
+          <input id="home" type="text" placeholder="Ex: Flamengo" />
+        </div>
+        <div class="field">
+          <label for="away">Time fora</label>
+          <input id="away" type="text" placeholder="Ex: Palmeiras" />
+        </div>
+        <button class="btn btn-primary" id="addMatch" type="button">Adicionar jogo</button>
+      </div>
+
+      <div class="modes" role="radiogroup" aria-label="Modo de desdobramento">
+        <button class="mode active" type="button" data-mode="completo">
+          <strong>Completo 1X2</strong>
+          <p>Como o outro sistema: marca casa, empate e/ou fora e gera todas as combinações.</p>
+        </button>
+        <button class="mode" type="button" data-mode="ancora">
+          <strong>Âncora + Triplas</strong>
+          <p>1 fixa (1X2 ou dupla chance) + desdobro curto. Ideal pra cobrir X2/1X sem explodir bilhetes.</p>
+        </button>
+      </div>
+
+      <div class="row" style="margin-top: 0.9rem;">
+        <div class="field">
+          <label for="stake">Stake do pacote (R$)</label>
+          <input id="stake" type="number" min="0" step="0.01" value="20" />
+        </div>
+        <div class="field" id="legsField" hidden>
+          <label for="legsPerTicket">Pernas por bilhete</label>
+          <select id="legsPerTicket">
+            <option value="3" selected>3 (tripla)</option>
+            <option value="4">4 (quadra)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="maxTickets">Limite de bilhetes</label>
+          <input id="maxTickets" type="number" min="1" step="1" value="64" />
+        </div>
+        <button class="btn btn-ghost" id="clearAll" type="button">Limpar jogos</button>
+      </div>
+
+      <p class="hint" id="modeHint">
+        Modo completo: em cada jogo marque um ou mais resultados (1, X, 2) e opcionalmente as odds.
+        Total de bilhetes = produto das opções marcadas.
+      </p>
+
+      <div id="anchorAdvice" class="advice-box" hidden></div>
+      <div class="matches" id="matches"></div>
+    </section>
+
+    <section class="panel">
+      <div class="row" style="justify-content: space-between; align-items: center;">
+        <div>
+          <strong style="font-family: var(--font-display); font-size: 1.25rem;">Bilhetes gerados</strong>
+          <p class="hint" style="margin-top: 0.25rem;">Atualiza na hora conforme você marca os resultados.</p>
+        </div>
+        <div class="footer-actions" style="margin-top: 0;">
+          <button class="btn btn-ghost" id="copyTickets" type="button">Copiar bilhetes</button>
+          <button class="btn btn-ghost" id="exportCsv" type="button">Exportar CSV</button>
+          <button class="btn btn-primary" id="savePackage" type="button">Salvar pacote</button>
+        </div>
+      </div>
+
+      <div class="stats" id="stats">
+        <div class="stat"><div class="k">Jogos</div><div class="v" id="statMatches">0</div></div>
+        <div class="stat"><div class="k">Bilhetes</div><div class="v" id="statTickets">0</div></div>
+        <div class="stat"><div class="k">Stake / bilhete</div><div class="v" id="statUnit">R$ 0,00</div></div>
+        <div class="stat"><div class="k">Retorno máx.</div><div class="v" id="statMax">R$ 0,00</div></div>
+        <div class="stat"><div class="k">Odd p/ empatar</div><div class="v" id="statBe">—</div></div>
+        <div class="stat"><div class="k">Bilhetes que cobrem</div><div class="v" id="statCover">0</div></div>
+      </div>
+
+      <p class="warn" id="warn" hidden></p>
+      <div id="packageAdvice" class="advice-box" hidden></div>
+      <div class="tickets" id="tickets">
+        <div class="empty">Adicione jogos e marque 1 / X / 2 para desdobrar.</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="row" style="justify-content: space-between; align-items: center;">
+        <div>
+          <strong style="font-family: var(--font-display); font-size: 1.25rem;">Histórico / conferência</strong>
+          <p class="hint" style="margin-top: 0.25rem;">
+            Salve o pacote ao faturar. Depois marque green/red em cada bilhete pra ver se no longo prazo compensa.
+          </p>
+        </div>
+        <div class="footer-actions" style="margin-top: 0;">
+          <button class="btn btn-ghost" id="exportHistory" type="button">Exportar histórico</button>
+          <button class="btn btn-danger" id="clearHistory" type="button">Limpar histórico</button>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top: 0.75rem;">
+        <div class="field" style="flex: 2 1 220px;">
+          <label for="packageNote">Nota do pacote (opcional)</label>
+          <input id="packageNote" type="text" placeholder="Ex: rodada domingo · âncora Flu · teste DC" />
+        </div>
+      </div>
+
+      <div class="stats" style="margin-top: 0.9rem;">
+        <div class="stat"><div class="k">Pacotes</div><div class="v" id="histPackages">0</div></div>
+        <div class="stat"><div class="k">Apostado</div><div class="v" id="histStaked">R$ 0,00</div></div>
+        <div class="stat"><div class="k">Retorno</div><div class="v" id="histReturned">R$ 0,00</div></div>
+        <div class="stat"><div class="k">Lucro</div><div class="v" id="histProfit">R$ 0,00</div></div>
+        <div class="stat"><div class="k">ROI</div><div class="v" id="histRoi">—</div></div>
+        <div class="stat"><div class="k">Pacotes green</div><div class="v" id="histWinRate">—</div></div>
+      </div>
+
+      <div id="historyAdvice" class="advice-box" hidden></div>
+      <div class="history-list" id="historyList">
+        <div class="empty">Nenhum pacote salvo ainda. Gere bilhetes e clique em Salvar pacote.</div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const RESULT_1X2 = [
+      { key: "1", label: "Casa", group: "1x2" },
+      { key: "X", label: "Empate", group: "1x2" },
+      { key: "2", label: "Fora", group: "1x2" },
+    ];
+
+    const DOUBLE_CHANCE = [
+      { key: "1X", label: "Casa ou empate", group: "dc", short: "1X" },
+      { key: "12", label: "Casa ou fora", group: "dc", short: "12" },
+      { key: "X2", label: "Empate ou fora", group: "dc", short: "X2" },
+    ];
+
+    const OUTCOMES = [...RESULT_1X2, ...DOUBLE_CHANCE];
+
+    const ODD_BANDS = [
+      { id: "extreme", min: 1.01, max: 1.20, label: "Super favorito extremo", tip: "Acerta muito, lucra pouco. Evite como âncora.", cls: "extreme" },
+      { id: "super", min: 1.21, max: 1.40, label: "Super favorito", tip: "Come o payout do pacote. Não use como fixa 1X2. Em dupla chance, revise o bloqueio.", cls: "super" },
+      { id: "strong", min: 1.41, max: 1.70, label: "Favorito forte", tip: "Zona boa de âncora (principalmente 1.50–1.70).", cls: "strong" },
+      { id: "moderate", min: 1.71, max: 2.00, label: "Favorito moderado", tip: "Âncora aceitável até ~1.85 com tese.", cls: "moderate" },
+      { id: "light", min: 2.01, max: 2.40, label: "Favorito leve", tip: "Mais seleção normal do que fixa.", cls: "light" },
+      { id: "under", min: 2.41, max: 99, label: "Equilíbrio / zebra", tip: "Não trate como âncora; use single ou variável.", cls: "under" },
+    ];
+
+    function emptySelection() {
+      return { "1": false, X: false, "2": false, "1X": false, "12": false, X2: false };
+    }
+
+    function emptyOdds() {
+      return { "1": "", X: "", "2": "", "1X": "", "12": "", X2: "" };
+    }
+
+    function isDoubleChance(key) {
+      return key === "1X" || key === "12" || key === "X2";
+    }
+
+    function coversOverlap(selectedKeys) {
+      const set = new Set(selectedKeys);
+      const notes = [];
+      if (set.has("1") && set.has("1X")) notes.push("1 e 1X se sobrepõem");
+      if (set.has("1") && set.has("12")) notes.push("1 e 12 se sobrepõem");
+      if (set.has("X") && set.has("1X")) notes.push("X e 1X se sobrepõem");
+      if (set.has("X") && set.has("X2")) notes.push("X e X2 se sobrepõem");
+      if (set.has("2") && set.has("12")) notes.push("2 e 12 se sobrepõem");
+      if (set.has("2") && set.has("X2")) notes.push("2 e X2 se sobrepõem");
+      if (set.has("1X") && set.has("12") && set.has("X2")) notes.push("1X+12+X2 cobrem tudo (odds baixas)");
+      return notes;
+    }
+
+    const state = {
+      mode: "completo",
+      matches: [],
+      anchorId: null,
+    };
+
+    const els = {
+      home: document.getElementById("home"),
+      away: document.getElementById("away"),
+      addMatch: document.getElementById("addMatch"),
+      clearAll: document.getElementById("clearAll"),
+      matches: document.getElementById("matches"),
+      stake: document.getElementById("stake"),
+      maxTickets: document.getElementById("maxTickets"),
+      legsPerTicket: document.getElementById("legsPerTicket"),
+      legsField: document.getElementById("legsField"),
+      modeHint: document.getElementById("modeHint"),
+      tickets: document.getElementById("tickets"),
+      warn: document.getElementById("warn"),
+      oddLegend: document.getElementById("oddLegend"),
+      minAnchorOdd: document.getElementById("minAnchorOdd"),
+      maxAnchorOdd: document.getElementById("maxAnchorOdd"),
+      blockBelow: document.getElementById("blockBelow"),
+      enforceAnchorBand: document.getElementById("enforceAnchorBand"),
+      anchorAdvice: document.getElementById("anchorAdvice"),
+      packageAdvice: document.getElementById("packageAdvice"),
+      statMatches: document.getElementById("statMatches"),
+      statTickets: document.getElementById("statTickets"),
+      statUnit: document.getElementById("statUnit"),
+      statMax: document.getElementById("statMax"),
+      statBe: document.getElementById("statBe"),
+      statCover: document.getElementById("statCover"),
+      copyTickets: document.getElementById("copyTickets"),
+      exportCsv: document.getElementById("exportCsv"),
+      savePackage: document.getElementById("savePackage"),
+      packageNote: document.getElementById("packageNote"),
+      exportHistory: document.getElementById("exportHistory"),
+      clearHistory: document.getElementById("clearHistory"),
+      historyList: document.getElementById("historyList"),
+      historyAdvice: document.getElementById("historyAdvice"),
+      histPackages: document.getElementById("histPackages"),
+      histStaked: document.getElementById("histStaked"),
+      histReturned: document.getElementById("histReturned"),
+      histProfit: document.getElementById("histProfit"),
+      histRoi: document.getElementById("histRoi"),
+      histWinRate: document.getElementById("histWinRate"),
+      modes: [...document.querySelectorAll(".mode")],
+      apiKey: document.getElementById("apiKey"),
+      apiSport: document.getElementById("apiSport"),
+      apiRegions: document.getElementById("apiRegions"),
+      apiQuery: document.getElementById("apiQuery"),
+      apiSearch: document.getElementById("apiSearch"),
+      apiLoadSports: document.getElementById("apiLoadSports"),
+      apiClearKey: document.getElementById("apiClearKey"),
+      apiFetchDc: document.getElementById("apiFetchDc"),
+      apiStatus: document.getElementById("apiStatus"),
+      apiResults: document.getElementById("apiResults"),
+    };
+
+    const API_BASE = "https://api.the-odds-api.com/v4";
+    const API_KEY_STORAGE = "desdobra_oddsapi_key";
+    const HISTORY_STORAGE = "desdobra_history_v1";
+    let apiCacheEvents = [];
+    let historyPackages = [];
+
+    function setApiStatus(msg, kind = "") {
+      els.apiStatus.textContent = msg;
+      els.apiStatus.className = `api-status ${kind}`;
+    }
+
+    function loadApiKey() {
+      const saved = localStorage.getItem(API_KEY_STORAGE) || "";
+      els.apiKey.value = saved;
+      return saved;
+    }
+
+    function saveApiKey(value) {
+      const key = String(value || "").trim();
+      if (key) localStorage.setItem(API_KEY_STORAGE, key);
+      else localStorage.removeItem(API_KEY_STORAGE);
+      return key;
+    }
+
+    function getApiKey() {
+      return saveApiKey(els.apiKey.value);
+    }
+
+    function normalizeText(s) {
+      return String(s || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+    }
+
+    function quotaFromHeaders(res) {
+      const remaining = res.headers.get("x-requests-remaining");
+      const used = res.headers.get("x-requests-used");
+      if (remaining == null && used == null) return "";
+      return ` · créditos: usados ${used ?? "?"} / restam ${remaining ?? "?"}`;
+    }
+
+    async function oddsApiGet(path, params = {}) {
+      const key = getApiKey();
+      if (!key) throw new Error("Informe a API key da The Odds API.");
+      const qs = new URLSearchParams({ apiKey: key, ...params });
+      const res = await fetch(`${API_BASE}${path}?${qs.toString()}`);
+      const quota = quotaFromHeaders(res);
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (_) {
+        data = null;
+      }
+      if (!res.ok) {
+        const msg = (data && (data.message || data.error_code)) || `HTTP ${res.status}`;
+        const err = new Error(`${msg}${quota}`);
+        err.status = res.status;
+        err.payload = data;
+        throw err;
+      }
+      return { data, quota, res };
+    }
+
+    async function loadSoccerSports() {
+      try {
+        setApiStatus("Carregando ligas disponíveis...");
+        const { data, quota } = await oddsApiGet("/sports", { all: "false" });
+        if (!Array.isArray(data)) throw new Error("Resposta inesperada em /sports");
+        const soccer = data.filter((s) => String(s.key || "").startsWith("soccer_") && s.active);
+        const current = els.apiSport.value;
+        const extras = [
+          { key: "upcoming", title: "Upcoming (várias ligas)" },
+        ];
+        const options = [...soccer.map((s) => ({ key: s.key, title: s.title || s.key })), ...extras];
+        // Keep Brazil options even if temporarily inactive in list.
+        const must = [
+          { key: "soccer_brazil_campeonato", title: "Brazil Série A" },
+          { key: "soccer_brazil_serie_b", title: "Brazil Série B" },
+        ];
+        for (const m of must) {
+          if (!options.some((o) => o.key === m.key)) options.unshift(m);
+        }
+        els.apiSport.innerHTML = options
+          .map((o) => `<option value="${escapeHtml(o.key)}">${escapeHtml(o.title)}</option>`)
+          .join("");
+        if ([...els.apiSport.options].some((o) => o.value === current)) {
+          els.apiSport.value = current;
+        } else {
+          els.apiSport.value = "soccer_brazil_campeonato";
+        }
+        setApiStatus(`Ligas carregadas: ${soccer.length} de futebol ativas${quota}`, "ok");
+      } catch (err) {
+        console.error(err);
+        setApiStatus(err.message || "Falha ao carregar ligas.", "err");
+      }
+    }
+
+    function pickBookmaker(bookmakers, marketKey) {
+      if (!Array.isArray(bookmakers) || !bookmakers.length) return null;
+      const withMarket = bookmakers.filter((b) => (b.markets || []).some((m) => m.key === marketKey));
+      const pool = withMarket.length ? withMarket : bookmakers;
+      const preferred = ["pinnacle", "bet365", "onexbet", "unibet", "williamhill", "bwin", "betfair_ex_eu"];
+      for (const name of preferred) {
+        const hit = pool.find((b) => String(b.key || "").toLowerCase().includes(name) || String(b.title || "").toLowerCase().includes(name));
+        if (hit) return hit;
+      }
+      return pool[0];
+    }
+
+    function extractH2H(event, bookmaker) {
+      const home = event.home_team;
+      const away = event.away_team;
+      const market = (bookmaker.markets || []).find((m) => m.key === "h2h");
+      if (!market) return { "1": "", X: "", "2": "" };
+      const map = { "1": "", X: "", "2": "" };
+      for (const o of market.outcomes || []) {
+        if (o.name === home) map["1"] = String(o.price ?? "");
+        else if (o.name === away) map["2"] = String(o.price ?? "");
+        else if (/^draw$/i.test(o.name)) map.X = String(o.price ?? "");
+      }
+      return map;
+    }
+
+    function extractDoubleChance(event, bookmaker) {
+      const home = event.home_team;
+      const away = event.away_team;
+      const market = (bookmaker.markets || []).find((m) => m.key === "double_chance");
+      const map = { "1X": "", "12": "", X2: "" };
+      if (!market) return map;
+      for (const o of market.outcomes || []) {
+        const n = String(o.name || "");
+        const price = String(o.price ?? "");
+        const homeDraw = new RegExp(`^${escapeRegExp(home)} or Draw$`, "i");
+        const awayDraw = new RegExp(`^${escapeRegExp(away)} or Draw$`, "i");
+        const homeAway = new RegExp(`^${escapeRegExp(home)} or ${escapeRegExp(away)}$`, "i");
+        const awayHome = new RegExp(`^${escapeRegExp(away)} or ${escapeRegExp(home)}$`, "i");
+        if (homeDraw.test(n) || /^Home or Draw$/i.test(n)) map["1X"] = price;
+        else if (awayDraw.test(n) || /^Away or Draw$/i.test(n)) map.X2 = price;
+        else if (homeAway.test(n) || awayHome.test(n) || /^Home or Away$/i.test(n)) map["12"] = price;
+      }
+      return map;
+    }
+
+    function escapeRegExp(s) {
+      return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    function formatKickoff(iso) {
+      if (!iso) return "";
+      try {
+        return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+      } catch (_) {
+        return iso;
+      }
+    }
+
+    function addMatchFromApi(event, oddsMap, bookName, leagueTitle) {
+      const home = event.home_team;
+      const away = event.away_team;
+      const exists = state.matches.some(
+        (m) => normalizeText(m.home) === normalizeText(home) && normalizeText(m.away) === normalizeText(away)
+      );
+      if (exists) {
+        const match = state.matches.find(
+          (m) => normalizeText(m.home) === normalizeText(home) && normalizeText(m.away) === normalizeText(away)
+        );
+        match.odds = { ...emptyOdds(), ...oddsMap };
+        match.apiMeta = {
+          matchId: event.id,
+          sportKey: event.sport_key,
+          bookmaker: bookName,
+          league: leagueTitle || event.sport_title || event.sport_key,
+        };
+        renderAll();
+        setApiStatus(`Odds atualizadas: ${home} x ${away} (${bookName || "casa"})`, "ok");
+        return;
+      }
+
+      state.matches.push({
+        id: uid(),
+        home,
+        away,
+        selected: { ...emptySelection(), "1": true },
+        odds: { ...emptyOdds(), ...oddsMap },
+        apiMeta: {
+          matchId: event.id,
+          sportKey: event.sport_key,
+          bookmaker: bookName,
+          league: leagueTitle || event.sport_title || event.sport_key,
+        },
+      });
+      renderAll();
+      setApiStatus(`Adicionado: ${home} x ${away} · odds de ${bookName || "API"}`, "ok");
+    }
+
+    async function importApiMatch(matchId) {
+      const event = apiCacheEvents.find((e) => String(e.id) === String(matchId));
+      if (!event) throw new Error("Jogo não encontrado na busca atual.");
+      setApiStatus(`Importando ${event.home_team} x ${event.away_team}...`);
+
+      let book = pickBookmaker(event.bookmakers || [], "h2h");
+      let oddsMap = book ? { ...extractH2H(event, book), "1X": "", "12": "", X2: "" } : emptyOdds();
+      let bookName = book ? (book.title || book.key) : "";
+
+      const wantDc = !!els.apiFetchDc.checked;
+      const sportKey = event.sport_key || els.apiSport.value;
+      if (wantDc && sportKey && sportKey !== "upcoming") {
+        try {
+          const { data, quota } = await oddsApiGet(`/sports/${encodeURIComponent(sportKey)}/events/${encodeURIComponent(event.id)}/odds`, {
+            regions: els.apiRegions.value || "eu",
+            markets: "h2h,double_chance",
+            oddsFormat: "decimal",
+          });
+          const detailed = data;
+          const dcBook = pickBookmaker(detailed.bookmakers || [], "double_chance")
+            || pickBookmaker(detailed.bookmakers || [], "h2h");
+          if (dcBook) {
+            book = dcBook;
+            bookName = dcBook.title || dcBook.key;
+            oddsMap = {
+              ...extractH2H(detailed, dcBook),
+              ...extractDoubleChance(detailed, dcBook),
+            };
+            // If DC book missing h2h, merge from list result.
+            if (!oddsMap["1"] && event.bookmakers) {
+              const h2hBook = pickBookmaker(event.bookmakers, "h2h");
+              if (h2hBook) oddsMap = { ...oddsMap, ...extractH2H(event, h2hBook) };
+            }
+          }
+          setApiStatus(`Odds + dupla chance importadas${quota}`, "ok");
+        } catch (err) {
+          console.warn("DC fetch failed, keeping h2h only", err);
+          setApiStatus(`1X2 importado; dupla chance indisponível (${err.message})`, "caution");
+        }
+      }
+
+      if (!parseOdd(oddsMap["1"]) && !parseOdd(oddsMap.X) && !parseOdd(oddsMap["2"])) {
+        throw new Error("Esse jogo veio sem mercado h2h (1X2) nas casas da região escolhida.");
+      }
+
+      addMatchFromApi(event, oddsMap, bookName, event.sport_title);
+    }
+
+    function regionCount() {
+      return String(els.apiRegions.value || "eu")
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean).length || 1;
+    }
+
+    function searchCost() {
+      // /odds cost = regions × markets; we only request h2h
+      return regionCount() * 1;
+    }
+
+    function dcImportCost() {
+      // event odds with h2h + double_chance
+      return regionCount() * 2;
+    }
+
+    function renderApiResults(events) {
+      if (!events.length) {
+        els.apiResults.innerHTML = `<div class="empty">Nenhum jogo encontrado nesse filtro.</div>`;
+        return;
+      }
+      const wantDc = !!els.apiFetchDc.checked;
+      const btnLabel = wantDc
+        ? `Importar + DC (~${dcImportCost()} créd.)`
+        : "Importar 1X2 (0 créd.)";
+      els.apiResults.innerHTML = events.map((e) => {
+        const when = formatKickoff(e.commence_time);
+        const books = (e.bookmakers || []).length;
+        const tip = e.sport_title || e.sport_key || "";
+        return `
+          <article class="api-match">
+            <div>
+              <div class="title">${escapeHtml(e.home_team)} x ${escapeHtml(e.away_team)}</div>
+              <div class="meta">${escapeHtml(tip)} · ${escapeHtml(when)} · ${books} casa(s)</div>
+            </div>
+            <button class="btn btn-primary" type="button" data-act="import-api" data-match-id="${escapeHtml(e.id)}">
+              ${btnLabel}
+            </button>
+          </article>
+        `;
+      }).join("");
+    }
+
+    async function searchApiMatches() {
+      const sport = els.apiSport.value || "soccer_brazil_campeonato";
+      const regions = els.apiRegions.value || "eu";
+      try {
+        setApiStatus(`Buscando odds h2h da liga (~${searchCost()} crédito(s))...`);
+        els.apiResults.innerHTML = "";
+        const { data, quota } = await oddsApiGet(`/sports/${encodeURIComponent(sport)}/odds`, {
+          regions,
+          markets: "h2h",
+          oddsFormat: "decimal",
+        });
+        if (!Array.isArray(data)) throw new Error("Resposta inesperada da API.");
+        apiCacheEvents = data;
+
+        const qRaw = els.apiQuery.value;
+        const terms = String(qRaw || "")
+          .split(/[,;|]/)
+          .map((t) => normalizeText(t))
+          .filter(Boolean);
+        let list = data.slice();
+        if (terms.length) {
+          list = list.filter((e) => {
+            const blob = normalizeText([e.home_team, e.away_team, e.sport_title, e.sport_key].join(" "));
+            return terms.some((term) => blob.includes(term));
+          });
+        }
+        list.sort((a, b) => String(a.commence_time || "").localeCompare(String(b.commence_time || "")));
+        renderApiResults(list);
+
+        if (!data.length) {
+          setApiStatus(`Nenhum jogo em ${sport} agora${quota}. Troque a liga ou tente mais tarde.`, "err");
+          return;
+        }
+        if (!list.length) {
+          setApiStatus(`Nada para "${qRaw}". Mostrando a lista completa da liga.`, "err");
+          renderApiResults(data.slice(0, 40));
+          return;
+        }
+        const filterTxt = terms.length ? ` · filtro: ${terms.join(" | ")}` : "";
+        setApiStatus(
+          `${list.length} jogo(s) em cache${filterTxt} · importar 1X2 agora é grátis · busca custou ~${searchCost()} créd.${quota}`,
+          "ok"
+        );
+      } catch (err) {
+        console.error(err);
+        setApiStatus(err.message || "Falha ao buscar jogos.", "err");
+      }
+    }
+
+    function uid() {
+      return Math.random().toString(36).slice(2, 9);
+    }
+
+    function money(n) {
+      return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    }
+
+    function parseOdd(v) {
+      const n = Number(String(v).replace(",", "."));
+      return Number.isFinite(n) && n > 1 ? n : null;
+    }
+
+    function classifyOdd(odd) {
+      if (odd == null) return null;
+      return ODD_BANDS.find((b) => odd >= b.min && odd <= b.max) || ODD_BANDS[ODD_BANDS.length - 1];
+    }
+
+    function oddTagHtml(odd) {
+      const band = classifyOdd(odd);
+      if (!band) return `<span class="odd-tag" style="opacity:.45">sem odd</span>`;
+      const implied = ((1 / odd) * 100).toFixed(0);
+      return `<span class="odd-tag ${band.cls}" title="${band.tip}">${band.label} · ~${implied}%</span>`;
+    }
+
+    function renderOddLegend() {
+      els.oddLegend.innerHTML = ODD_BANDS.map((b) => {
+        const range = b.max >= 99 ? `${b.min.toFixed(2)}+` : `${b.min.toFixed(2)} – ${b.max.toFixed(2)}`;
+        return `
+          <div class="legend-item">
+            <strong class="odd-tag ${b.cls}" style="margin-bottom:0.35rem;">${b.label}</strong>
+            <div>${range}</div>
+            <div style="color:var(--muted); margin-top:0.2rem;">${b.tip}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function getAnchorConfig() {
+      return {
+        minIdeal: parseOdd(els.minAnchorOdd.value) || 1.5,
+        maxIdeal: parseOdd(els.maxAnchorOdd.value) || 1.85,
+        blockBelow: parseOdd(els.blockBelow.value) || 1.4,
+        enforce: !!els.enforceAnchorBand.checked,
+      };
+    }
+
+    function evaluateAnchor(odd, outcomeKey = null) {
+      const cfg = getAnchorConfig();
+      const dc = outcomeKey ? isDoubleChance(outcomeKey) : false;
+      if (odd == null) {
+        return {
+          level: "caution",
+          title: "Âncora sem odd",
+          msg: dc
+            ? "Preencha a odd da dupla chance. Como fixa, 1X/X2 costuma ficar entre 1.25 e 1.55."
+            : "Preencha a odd da fixa para validar a faixa (ideal 1.50–1.85).",
+          blocked: false,
+        };
+      }
+      const band = classifyOdd(odd);
+      // Dupla chance naturalmente tem odd mais baixa que 1X2 puro.
+      const effectiveBlock = dc ? Math.min(cfg.blockBelow, 1.20) : cfg.blockBelow;
+      const minIdeal = dc ? Math.min(cfg.minIdeal, 1.25) : cfg.minIdeal;
+      const maxIdeal = dc ? Math.min(cfg.maxIdeal, 1.55) : cfg.maxIdeal;
+
+      if (odd < effectiveBlock) {
+        return {
+          level: "bad",
+          title: `Âncora bloqueada · ${band.label} (${odd.toFixed(2)})`,
+          msg: dc
+            ? `Dupla chance abaixo de ${effectiveBlock.toFixed(2)} quase não paga o pacote. Prefira outra fixa ou solte o bloqueio.`
+            : `Odd abaixo de ${cfg.blockBelow.toFixed(2)} come o payout. Troque a fixa ou use single. Zona ideal: ${cfg.minIdeal.toFixed(2)}–${cfg.maxIdeal.toFixed(2)}.`,
+          blocked: cfg.enforce,
+        };
+      }
+      if (odd < minIdeal) {
+        return {
+          level: "caution",
+          title: `Âncora fraca · ${band.label} (${odd.toFixed(2)})`,
+          msg: dc
+            ? `1X/12/X2 abaixo de ${minIdeal.toFixed(2)} deixa o pacote apertado. Use só se a cobertura valer a odd baixa.`
+            : `Acima do bloqueio, mas abaixo do mínimo ideal (${cfg.minIdeal.toFixed(2)}). Pacote tende a lucrar pouco no cenário mais comum.`,
+          blocked: false,
+        };
+      }
+      if (odd <= maxIdeal) {
+        return {
+          level: "good",
+          title: `Âncora na zona boa · ${band.label} (${odd.toFixed(2)})`,
+          msg: dc
+            ? `Dupla chance boa como fixa (${minIdeal.toFixed(2)}–${maxIdeal.toFixed(2)}). Cobre 2 resultados e ainda deixa payout útil.`
+            : `Faixa ideal para fixa de desdobro (${cfg.minIdeal.toFixed(2)}–${cfg.maxIdeal.toFixed(2)}). Ainda assim, se cair, zera o pacote.`,
+          blocked: false,
+        };
+      }
+      if (odd <= 2.2) {
+        return {
+          level: "caution",
+          title: `Âncora alta · ${band.label} (${odd.toFixed(2)})`,
+          msg: "Paga melhor, mas falha mais. Só mantenha se a tip tiver motivo forte.",
+          blocked: false,
+        };
+      }
+      return {
+        level: "bad",
+        title: `Isso não é âncora · ${band.label} (${odd.toFixed(2)})`,
+        msg: "Acima de 2.20 trate como seleção normal/variável, não como fixa do pacote.",
+        blocked: false,
+      };
+    }
+
+    function selectedOutcomes(match) {
+      return OUTCOMES
+        .filter((o) => match.selected[o.key])
+        .map((o) => ({
+          key: o.key,
+          label: o.label,
+          odd: parseOdd(match.odds[o.key]),
+        }));
+    }
+
+    function cartesian(arrays) {
+      return arrays.reduce(
+        (acc, curr) => acc.flatMap((a) => curr.map((b) => [...a, b])),
+        [[]]
+      );
+    }
+
+    function combinations(arr, k) {
+      if (k < 0 || k > arr.length) return [];
+      if (k === 0) return [[]];
+      if (k === arr.length) return [arr.slice()];
+      const out = [];
+      const walk = (start, path) => {
+        if (path.length === k) {
+          out.push(path.slice());
+          return;
+        }
+        for (let i = start; i < arr.length; i++) {
+          path.push(arr[i]);
+          walk(i + 1, path);
+          path.pop();
+        }
+      };
+      walk(0, []);
+      return out;
+    }
+
+    function ticketOdd(legs) {
+      if (legs.some((l) => !l.odd)) return null;
+      return legs.reduce((acc, l) => acc * l.odd, 1);
+    }
+
+    function buildCompleto() {
+      const pools = state.matches.map((m) => {
+        const opts = selectedOutcomes(m);
+        return opts.map((o) => ({
+          matchId: m.id,
+          home: m.home,
+          away: m.away,
+          result: o.key,
+          resultLabel: o.label,
+          odd: o.odd,
+          isAnchor: false,
+        }));
+      });
+
+      if (!pools.length || pools.some((p) => !p.length)) {
+        return { tickets: [], warning: pools.length ? "Marque pelo menos 1 resultado em cada jogo." : "", anchorEval: null };
+      }
+
+      const max = Number(els.maxTickets.value) || 64;
+      const total = pools.reduce((acc, p) => acc * p.length, 1);
+      if (total > max) {
+        return {
+          tickets: [],
+          warning: `Esse marcação gera ${total} bilhetes (acima do limite ${max}). Reduza opções 1/X/2 ou aumente o limite.`,
+          anchorEval: null,
+        };
+      }
+
+      const combos = cartesian(pools);
+      const tickets = combos.map((legs, i) => ({
+        id: i + 1,
+        legs,
+        odd: ticketOdd(legs),
+      }));
+      return { tickets, warning: "", anchorEval: null };
+    }
+
+    function buildAncora() {
+      if (!state.matches.length) return { tickets: [], warning: "", anchorEval: null };
+      if (!state.anchorId) {
+        return { tickets: [], warning: "Escolha 1 jogo âncora (fixa).", anchorEval: null };
+      }
+
+      const anchorMatch = state.matches.find((m) => m.id === state.anchorId);
+      const anchorOpts = selectedOutcomes(anchorMatch);
+      if (anchorOpts.length !== 1) {
+        return {
+          tickets: [],
+          warning: "Na âncora, marque exatamente 1 mercado (1, X, 2, 1X, 12 ou X2).",
+          anchorEval: null,
+        };
+      }
+
+      const anchorEval = evaluateAnchor(anchorOpts[0].odd, anchorOpts[0].key);
+      if (anchorEval.blocked) {
+        return { tickets: [], warning: anchorEval.msg, anchorEval };
+      }
+
+      const anchorLeg = {
+        matchId: anchorMatch.id,
+        home: anchorMatch.home,
+        away: anchorMatch.away,
+        result: anchorOpts[0].key,
+        resultLabel: anchorOpts[0].label,
+        odd: anchorOpts[0].odd,
+        isAnchor: true,
+      };
+
+      const variableMatches = state.matches.filter((m) => m.id !== state.anchorId);
+      const variablePools = variableMatches.map((m) => {
+        const opts = selectedOutcomes(m);
+        return opts.map((o) => ({
+          matchId: m.id,
+          home: m.home,
+          away: m.away,
+          result: o.key,
+          resultLabel: o.label,
+          odd: o.odd,
+          isAnchor: false,
+        }));
+      });
+
+      if (variablePools.some((p) => !p.length)) {
+        return { tickets: [], warning: "Marque pelo menos 1 resultado em cada jogo variável.", anchorEval };
+      }
+
+      // Expand each variable match into concrete legs, then choose combinations of matches.
+      const legsNeeded = Number(els.legsPerTicket.value) || 3;
+      const varsNeeded = legsNeeded - 1;
+      if (variablePools.length < varsNeeded) {
+        return {
+          tickets: [],
+          warning: `Para bilhetes de ${legsNeeded} pernas com 1 âncora, você precisa de pelo menos ${varsNeeded} jogos variáveis.`,
+          anchorEval,
+        };
+      }
+
+      const matchCombos = combinations(
+        variablePools.map((_, idx) => idx),
+        varsNeeded
+      );
+
+      let tickets = [];
+      for (const idxs of matchCombos) {
+        const chosenPools = idxs.map((i) => variablePools[i]);
+        const expanded = cartesian(chosenPools);
+        for (const vars of expanded) {
+          tickets.push({
+            id: tickets.length + 1,
+            legs: [anchorLeg, ...vars],
+            odd: ticketOdd([anchorLeg, ...vars]),
+          });
+        }
+      }
+
+      const max = Number(els.maxTickets.value) || 64;
+      if (tickets.length > max) {
+        return {
+          tickets: [],
+          warning: `Esse pacote gera ${tickets.length} bilhetes (acima do limite ${max}). Reduza jogos/opções ou aumente o limite.`,
+          anchorEval,
+        };
+      }
+
+      return { tickets, warning: "", anchorEval };
+    }
+
+    function generate() {
+      return state.mode === "completo" ? buildCompleto() : buildAncora();
+    }
+
+    function outcomeCardHtml(m, o) {
+      const on = !!m.selected[o.key];
+      const odd = parseOdd(m.odds[o.key]);
+      const dcClass = o.group === "dc" ? "dc" : "";
+      return `
+        <div class="outcome ${dcClass} ${on ? "on" : ""}" data-match="${m.id}" data-outcome="${o.key}">
+          <div class="outcome-head">
+            <span class="chip">${o.key}</span>
+            <input class="toggle" type="checkbox" ${on ? "checked" : ""} data-act="toggle" data-match="${m.id}" data-outcome="${o.key}" aria-label="${o.label}" />
+          </div>
+          <div style="font-size:0.82rem;color:var(--muted);">${o.label}</div>
+          <input type="number" min="1.01" step="0.01" placeholder="Odd" value="${m.odds[o.key] ?? ""}" data-act="odd" data-match="${m.id}" data-outcome="${o.key}" />
+          ${oddTagHtml(odd)}
+        </div>
+      `;
+    }
+
+    function renderMatches() {
+      if (!state.matches.length) {
+        els.matches.innerHTML = `<div class="empty">Nenhum jogo ainda. Adicione casa x fora acima.</div>`;
+        return;
+      }
+
+      els.matches.innerHTML = state.matches.map((m, index) => {
+        const isAnchor = state.anchorId === m.id;
+        const selectedKeys = OUTCOMES.filter((o) => m.selected[o.key]).map((o) => o.key);
+        const overlap = coversOverlap(selectedKeys);
+        let anchorMeta = "";
+        if (isAnchor && state.mode === "ancora") {
+          const opts = selectedOutcomes(m);
+          const odd = opts.length === 1 ? opts[0].odd : null;
+          const key = opts.length === 1 ? opts[0].key : null;
+          const ev = evaluateAnchor(odd, key);
+          anchorMeta = `<div class="anchor-meta">${escapeHtml(ev.title)} — ${escapeHtml(ev.msg)}</div>`;
+        }
+
+        const overlapHtml = overlap.length
+          ? `<div class="anchor-meta" style="color:var(--warn);">Atenção: ${escapeHtml(overlap.join("; "))}. Isso gera bilhetes redundantes.</div>`
+          : "";
+
+        return `
+          <article class="match ${isAnchor ? "is-anchor" : ""}" data-id="${m.id}">
+            <div class="match-top">
+              <div class="match-title">
+                ${index + 1}. ${escapeHtml(m.home)} <span class="vs">x</span> ${escapeHtml(m.away)}
+                ${m.apiMeta ? `<div class="meta" style="font-size:0.78rem;color:var(--muted);font-family:var(--font-body);font-weight:500;margin-top:0.2rem;">${escapeHtml(m.apiMeta.league || "")}${m.apiMeta.bookmaker ? ` · odds: ${escapeHtml(m.apiMeta.bookmaker)}` : ""}</div>` : ""}
+              </div>
+              <button class="btn btn-danger" type="button" data-act="remove" data-match="${m.id}">Remover</button>
+            </div>
+
+            <div class="market-block">
+              <div class="market-label">Resultado final</div>
+              <div class="outcomes">${RESULT_1X2.map((o) => outcomeCardHtml(m, o)).join("")}</div>
+            </div>
+
+            <div class="market-block">
+              <div class="market-label">Dupla chance</div>
+              <div class="outcomes">${DOUBLE_CHANCE.map((o) => outcomeCardHtml(m, o)).join("")}</div>
+              <div class="quick-dc">
+                <button class="btn btn-ghost" type="button" data-act="quick-dc" data-match="${m.id}" data-outcome="1X">Só 1X</button>
+                <button class="btn btn-ghost" type="button" data-act="quick-dc" data-match="${m.id}" data-outcome="X2">Só X2</button>
+                <button class="btn btn-ghost" type="button" data-act="quick-dc" data-match="${m.id}" data-outcome="12">Só 12</button>
+                <button class="btn btn-ghost" type="button" data-act="clear-1x2" data-match="${m.id}">Limpar 1X2</button>
+              </div>
+            </div>
+
+            <div class="match-actions">
+              <button class="btn btn-ghost anchor-btn ${isAnchor ? "active" : ""}" type="button" data-act="anchor" data-match="${m.id}" ${state.mode !== "ancora" ? "hidden" : ""}>
+                ${isAnchor ? "Âncora selecionada" : "Usar como âncora"}
+              </button>
+              <span class="hint" style="margin:0;">Use 1X2 para cenários pontuais ou dupla chance pra cobrir 2 resultados num bilhete só.</span>
+            </div>
+            ${anchorMeta}
+            ${overlapHtml}
+          </article>
+        `;
+      }).join("");
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function renderAnchorAdvice(anchorEval) {
+      if (state.mode !== "ancora" || !state.anchorId) {
+        els.anchorAdvice.hidden = true;
+        els.anchorAdvice.innerHTML = "";
+        return;
+      }
+      const ev = anchorEval || (() => {
+        const m = state.matches.find((x) => x.id === state.anchorId);
+        if (!m) return null;
+        const opts = selectedOutcomes(m);
+        return evaluateAnchor(
+          opts.length === 1 ? opts[0].odd : null,
+          opts.length === 1 ? opts[0].key : null
+        );
+      })();
+      if (!ev) {
+        els.anchorAdvice.hidden = true;
+        return;
+      }
+      els.anchorAdvice.hidden = false;
+      els.anchorAdvice.className = `advice-box ${ev.level === "good" ? "good" : ev.level === "bad" ? "bad" : "caution"}`;
+      els.anchorAdvice.innerHTML = `<div class="title">${escapeHtml(ev.title)}</div><div class="msg">${escapeHtml(ev.msg)}</div>`;
+    }
+
+    function renderTickets() {
+      const { tickets, warning, anchorEval } = generate();
+      const stake = Number(els.stake.value) || 0;
+      const unit = tickets.length ? stake / tickets.length : 0;
+      const breakEvenOdd = tickets.length ? tickets.length : null;
+      const covering = tickets.filter((t) => t.odd != null && t.odd >= (breakEvenOdd || Infinity));
+      const maxReturn = tickets.reduce((acc, t) => {
+        if (t.odd == null) return acc;
+        return Math.max(acc, unit * t.odd);
+      }, 0);
+
+      els.statMatches.textContent = String(state.matches.length);
+      els.statTickets.textContent = String(tickets.length);
+      els.statUnit.textContent = money(unit || 0);
+      els.statMax.textContent = tickets.some((t) => t.odd != null) ? money(maxReturn) : "—";
+      els.statBe.textContent = breakEvenOdd != null ? breakEvenOdd.toFixed(2) : "—";
+      els.statCover.textContent = `${covering.length}/${tickets.length || 0}`;
+
+      renderAnchorAdvice(anchorEval);
+
+      if (warning) {
+        els.warn.hidden = false;
+        els.warn.className = `warn ${anchorEval && anchorEval.blocked ? "danger" : ""}`;
+        els.warn.textContent = warning;
+      } else {
+        els.warn.hidden = true;
+        els.warn.textContent = "";
+      }
+
+      if (!tickets.length) {
+        els.tickets.innerHTML = `<div class="empty">${warning || "Adicione jogos e marque 1/X/2 ou dupla chance (1X/12/X2) para desdobrar."}</div>`;
+        els.packageAdvice.hidden = true;
+        window.__lastTickets = [];
+        return;
+      }
+
+      if (tickets.some((t) => t.odd != null)) {
+        const coverCount = covering.length;
+        const level = coverCount === 0 ? "bad" : coverCount < tickets.length ? "caution" : "good";
+        els.packageAdvice.hidden = false;
+        els.packageAdvice.className = `advice-box ${level}`;
+        els.packageAdvice.innerHTML = `
+          <div class="title">Cobertura do pacote</div>
+          <div class="msg">
+            Com 1 bilhete green, precisa odd ≥ <b>${breakEvenOdd.toFixed(2)}</b> para empatar o stake do pacote.
+            Agora <b>${coverCount}</b> de <b>${tickets.length}</b> bilhetes cobrem o pacote sozinhos.
+            ${coverCount < tickets.length ? "Os bilhetes abaixo da linha aparecem em vermelho — green neles ainda pode dar prejuízo." : "Todos os bilhetes com odd já pagam o pacote se saírem sozinhos."}
+          </div>
+        `;
+      } else {
+        els.packageAdvice.hidden = true;
+      }
+
+      els.tickets.innerHTML = tickets.map((t) => {
+        const oddTxt = t.odd != null ? t.odd.toFixed(2) : "sem odds";
+        const retorno = t.odd != null ? money(unit * t.odd) : "—";
+        const covers = t.odd != null && t.odd >= breakEvenOdd;
+        const coverHtml = t.odd == null
+          ? ""
+          : `<span class="cover-pill ${covers ? "yes" : "no"}">${covers ? "cobre pacote" : "não cobre"}</span>`;
+        const legs = t.legs.map((l) => {
+          const odd = l.odd != null ? ` @ ${l.odd}` : "";
+          const band = classifyOdd(l.odd);
+          const bandTxt = band ? ` · ${band.label}` : "";
+          return `<span class="leg ${l.isAnchor ? "anchor-leg" : ""}">${escapeHtml(l.home)} x ${escapeHtml(l.away)} → <b>${l.result}</b>${odd}${l.isAnchor ? " · ÂNCORA" : ""}${bandTxt}</span>`;
+        }).join("");
+
+        return `
+          <article class="ticket ${t.odd == null ? "" : covers ? "covers" : "no-cover"}">
+            <div class="ticket-head">
+              <strong>Bilhete #${t.id}${coverHtml}</strong>
+              <div class="ticket-meta">
+                Stake <b>${money(unit)}</b> · Odd <b>${oddTxt}</b> · Retorno <b>${retorno}</b>
+              </div>
+            </div>
+            <div class="legs">${legs}</div>
+          </article>
+        `;
+      }).join("");
+
+      window.__lastTickets = tickets.map((t) => ({ ...t, unit }));
+    }
+
+    function renderAll() {
+      const ancora = state.mode === "ancora";
+      els.legsField.hidden = !ancora;
+      els.modeHint.textContent = ancora
+        ? "Modo âncora: 1 fixa com exatamente 1 mercado (1, X, 2, 1X, 12 ou X2). Nos outros jogos, desdobre 1X2 e/ou dupla chance. Odd ideal 1X2: 1.50–1.85 | dupla chance: ~1.25–1.55."
+        : "Modo completo: marque 1/X/2 e/ou dupla chance (1X/12/X2). Total de bilhetes = produto das opções marcadas em cada jogo.";
+      renderMatches();
+      renderTickets();
+    }
+
+    function addMatch() {
+      const home = els.home.value.trim();
+      const away = els.away.value.trim();
+      if (!home || !away) {
+        els.home.focus();
+        return;
+      }
+      state.matches.push({
+        id: uid(),
+        home,
+        away,
+        selected: { ...emptySelection(), "1": true },
+        odds: emptyOdds(),
+      });
+      els.home.value = "";
+      els.away.value = "";
+      els.home.focus();
+      renderAll();
+    }
+
+    els.apiSearch.addEventListener("click", searchApiMatches);
+    els.apiLoadSports.addEventListener("click", loadSoccerSports);
+    els.apiFetchDc.addEventListener("change", () => {
+      if (!apiCacheEvents.length) return;
+      const terms = String(els.apiQuery.value || "")
+        .split(/[,;|]/)
+        .map((t) => normalizeText(t))
+        .filter(Boolean);
+      const list = terms.length
+        ? apiCacheEvents.filter((e) => {
+            const blob = normalizeText([e.home_team, e.away_team].join(" "));
+            return terms.some((term) => blob.includes(term));
+          })
+        : apiCacheEvents;
+      renderApiResults(list);
+    });
+    els.apiQuery.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") searchApiMatches();
+    });
+    els.apiKey.addEventListener("change", () => {
+      saveApiKey(els.apiKey.value);
+      setApiStatus("Chave salva neste navegador.", "ok");
+    });
+    els.apiClearKey.addEventListener("click", () => {
+      els.apiKey.value = "";
+      saveApiKey("");
+      setApiStatus("Chave removida deste navegador.");
+    });
+    els.apiResults.addEventListener("click", async (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLElement)) return;
+      if (t.dataset.act !== "import-api") return;
+      const matchId = t.dataset.matchId;
+      t.disabled = true;
+      try {
+        await importApiMatch(matchId);
+      } catch (err) {
+        console.error(err);
+        setApiStatus(err.message || "Falha ao importar odds.", "err");
+      } finally {
+        t.disabled = false;
+      }
+    });
+
+    els.addMatch.addEventListener("click", addMatch);
+    [els.home, els.away].forEach((el) => {
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") addMatch();
+      });
+    });
+
+    els.clearAll.addEventListener("click", () => {
+      state.matches = [];
+      state.anchorId = null;
+      renderAll();
+    });
+
+    els.modes.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        state.mode = btn.dataset.mode;
+        els.modes.forEach((b) => b.classList.toggle("active", b === btn));
+        if (state.mode !== "ancora") state.anchorId = null;
+        renderAll();
+      });
+    });
+
+    ["input", "change"].forEach((evt) => {
+      els.stake.addEventListener(evt, renderTickets);
+      els.maxTickets.addEventListener(evt, renderTickets);
+      els.legsPerTicket.addEventListener(evt, renderTickets);
+      els.minAnchorOdd.addEventListener(evt, renderAll);
+      els.maxAnchorOdd.addEventListener(evt, renderAll);
+      els.blockBelow.addEventListener(evt, renderAll);
+      els.enforceAnchorBand.addEventListener(evt, renderAll);
+    });
+
+    els.matches.addEventListener("click", (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLElement)) return;
+      const act = t.dataset.act;
+      const matchId = t.dataset.match;
+      if (!act || !matchId) return;
+
+      const match = state.matches.find((m) => m.id === matchId);
+      if (!match) return;
+
+      if (act === "remove") {
+        state.matches = state.matches.filter((m) => m.id !== matchId);
+        if (state.anchorId === matchId) state.anchorId = null;
+        renderAll();
+        return;
+      }
+
+      if (act === "toggle") {
+        const key = t.dataset.outcome;
+        match.selected[key] = !match.selected[key];
+        renderAll();
+        return;
+      }
+
+      if (act === "quick-dc") {
+        const key = t.dataset.outcome;
+        // Limpa 1X2 e outras DC; deixa só a DC escolhida.
+        OUTCOMES.forEach((o) => { match.selected[o.key] = false; });
+        match.selected[key] = true;
+        renderAll();
+        return;
+      }
+
+      if (act === "clear-1x2") {
+        RESULT_1X2.forEach((o) => { match.selected[o.key] = false; });
+        renderAll();
+        return;
+      }
+
+      if (act === "anchor") {
+        state.anchorId = state.anchorId === matchId ? null : matchId;
+        // Âncora deve ter só 1 mercado marcado: se tiver vários, mantém o primeiro marcado.
+        const selected = OUTCOMES.filter((o) => match.selected[o.key]);
+        if (selected.length !== 1 && selected.length > 0) {
+          const keep = selected[0].key;
+          OUTCOMES.forEach((o) => { match.selected[o.key] = o.key === keep; });
+        }
+        renderAll();
+      }
+    });
+
+    els.matches.addEventListener("input", (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLInputElement)) return;
+      if (t.dataset.act !== "odd") return;
+      const match = state.matches.find((m) => m.id === t.dataset.match);
+      if (!match) return;
+      match.odds[t.dataset.outcome] = t.value;
+
+      // Atualiza só a tag da odd sem perder o foco do input.
+      const outcome = t.closest(".outcome");
+      if (outcome) {
+        const oldTag = outcome.querySelector(".odd-tag");
+        const html = oddTagHtml(parseOdd(t.value));
+        if (oldTag) oldTag.outerHTML = html;
+        else outcome.insertAdjacentHTML("beforeend", html);
+      }
+      renderTickets();
+      // Atualiza texto da âncora no card sem rerender completo.
+      if (state.mode === "ancora" && state.anchorId === match.id) {
+        const card = els.matches.querySelector(`[data-id="${match.id}"]`);
+        if (card) {
+          const opts = selectedOutcomes(match);
+          const ev = evaluateAnchor(
+            opts.length === 1 ? opts[0].odd : null,
+            opts.length === 1 ? opts[0].key : null
+          );
+          let meta = card.querySelector(".anchor-meta");
+          if (!meta) {
+            meta = document.createElement("div");
+            meta.className = "anchor-meta";
+            card.appendChild(meta);
+          }
+          meta.textContent = `${ev.title} — ${ev.msg}`;
+        }
+      }
+    });
+
+    function ticketsToText() {
+      const tickets = window.__lastTickets || [];
+      if (!tickets.length) return "";
+      return tickets.map((t) => {
+        const oddTxt = t.odd != null ? t.odd.toFixed(2) : "sem odds";
+        const legs = t.legs
+          .map((l) => `${l.home} x ${l.away} = ${l.result}${l.odd != null ? ` (${l.odd})` : ""}${l.isAnchor ? " [ÂNCORA]" : ""}`)
+          .join(" | ");
+        return `#${t.id} | stake ${money(t.unit)} | odd ${oddTxt} | ${legs}`;
+      }).join("\n");
+    }
+
+    els.copyTickets.addEventListener("click", async () => {
+      const text = ticketsToText();
+      if (!text) return;
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.left = "-9999px";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          ta.remove();
+        }
+        els.copyTickets.textContent = "Copiado!";
+      } catch (err) {
+        els.copyTickets.textContent = "Falha ao copiar";
+        console.error(err);
+      }
+      setTimeout(() => { els.copyTickets.textContent = "Copiar bilhetes"; }, 1400);
+    });
+
+    els.exportCsv.addEventListener("click", () => {
+      const tickets = window.__lastTickets || [];
+      if (!tickets.length) return;
+      const rows = [["bilhete", "stake", "odd_total", "retorno_potencial", "pernas"]];
+      for (const t of tickets) {
+        const odd = t.odd != null ? t.odd.toFixed(4) : "";
+        const retorno = t.odd != null ? (t.unit * t.odd).toFixed(2) : "";
+        const pernas = t.legs
+          .map((l) => `${l.home} x ${l.away}:${l.result}${l.odd != null ? `@${l.odd}` : ""}`)
+          .join(" / ");
+        rows.push([t.id, t.unit.toFixed(2), odd, retorno, pernas]);
+      }
+      const csv = rows.map((r) => r.map((c) => `"${String(c).replaceAll('"', '""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "desdobramento.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    function loadHistory() {
+      try {
+        const raw = localStorage.getItem(HISTORY_STORAGE);
+        historyPackages = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(historyPackages)) historyPackages = [];
+      } catch (_) {
+        historyPackages = [];
+      }
+    }
+
+    function saveHistory() {
+      localStorage.setItem(HISTORY_STORAGE, JSON.stringify(historyPackages));
+    }
+
+    function packageStake(pkg) {
+      return (pkg.tickets || []).reduce((acc, t) => acc + (Number(t.stake) || 0), 0);
+    }
+
+    function packageReturned(pkg) {
+      return (pkg.tickets || []).reduce((acc, t) => {
+        if (t.status === "green" && t.odd != null) return acc + (Number(t.stake) || 0) * Number(t.odd);
+        return acc;
+      }, 0);
+    }
+
+    function isPackageSettled(pkg) {
+      return (pkg.tickets || []).every((t) => t.status === "green" || t.status === "red");
+    }
+
+    function historyTotals() {
+      const settled = historyPackages.filter(isPackageSettled);
+      const stakedAll = historyPackages.reduce((a, p) => a + packageStake(p), 0);
+      const returnedAll = historyPackages.reduce((a, p) => a + packageReturned(p), 0);
+      // For ROI de longo prazo, conta só pacotes fechados (sem pending)
+      const stakedSettled = settled.reduce((a, p) => a + packageStake(p), 0);
+      const returnedSettled = settled.reduce((a, p) => a + packageReturned(p), 0);
+      const profitSettled = returnedSettled - stakedSettled;
+      const greens = settled.filter((p) => packageReturned(p) > 0).length;
+      return {
+        count: historyPackages.length,
+        settledCount: settled.length,
+        stakedAll,
+        returnedAll,
+        stakedSettled,
+        returnedSettled,
+        profitSettled,
+        roi: stakedSettled > 0 ? (profitSettled / stakedSettled) * 100 : null,
+        winRate: settled.length ? (greens / settled.length) * 100 : null,
+        greens,
+      };
+    }
+
+    function saveCurrentPackage() {
+      const tickets = window.__lastTickets || [];
+      if (!tickets.length) {
+        alert("Gere bilhetes antes de salvar o pacote.");
+        return;
+      }
+      const missingOdds = tickets.some((t) => t.odd == null);
+      if (missingOdds && !confirm("Alguns bilhetes estão sem odd. Salvar mesmo assim?")) return;
+
+      const pkg = {
+        id: uid(),
+        createdAt: new Date().toISOString(),
+        note: (els.packageNote.value || "").trim(),
+        mode: state.mode,
+        stakePackage: Number(els.stake.value) || tickets.reduce((a, t) => a + t.unit, 0),
+        tickets: tickets.map((t) => ({
+          id: t.id,
+          stake: Number(t.unit) || 0,
+          odd: t.odd,
+          status: "pending",
+          legs: (t.legs || []).map((l) => ({
+            home: l.home,
+            away: l.away,
+            result: l.result,
+            odd: l.odd,
+            isAnchor: !!l.isAnchor,
+          })),
+        })),
+      };
+      historyPackages.unshift(pkg);
+      saveHistory();
+      els.packageNote.value = "";
+      els.savePackage.textContent = "Salvo!";
+      setTimeout(() => { els.savePackage.textContent = "Salvar pacote"; }, 1200);
+      renderHistory();
+    }
+
+    function settleTicket(pkgId, ticketId, status) {
+      const pkg = historyPackages.find((p) => p.id === pkgId);
+      if (!pkg) return;
+      const ticket = (pkg.tickets || []).find((t) => String(t.id) === String(ticketId));
+      if (!ticket) return;
+      ticket.status = status;
+      ticket.settledAt = new Date().toISOString();
+      saveHistory();
+      renderHistory();
+    }
+
+    function settleAllRed(pkgId) {
+      const pkg = historyPackages.find((p) => p.id === pkgId);
+      if (!pkg) return;
+      pkg.tickets.forEach((t) => {
+        t.status = "red";
+        t.settledAt = new Date().toISOString();
+      });
+      saveHistory();
+      renderHistory();
+    }
+
+    function deletePackage(pkgId) {
+      historyPackages = historyPackages.filter((p) => p.id !== pkgId);
+      saveHistory();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const totals = historyTotals();
+      els.histPackages.textContent = String(totals.count);
+      els.histStaked.textContent = money(totals.stakedSettled || 0);
+      els.histReturned.textContent = money(totals.returnedSettled || 0);
+      els.histProfit.textContent = money(totals.profitSettled || 0);
+      els.histRoi.textContent = totals.roi == null ? "—" : `${totals.roi.toFixed(1)}%`;
+      els.histWinRate.textContent = totals.winRate == null
+        ? "—"
+        : `${totals.greens}/${totals.settledCount} (${totals.winRate.toFixed(0)}%)`;
+
+      if (totals.settledCount >= 5) {
+        els.historyAdvice.hidden = false;
+        const level = totals.roi > 0 ? "good" : totals.roi > -10 ? "caution" : "bad";
+        els.historyAdvice.className = `advice-box ${level}`;
+        els.historyAdvice.innerHTML = `
+          <div class="title">${totals.roi > 0 ? "No lucro (pacotes fechados)" : "No prejuízo (pacotes fechados)"}</div>
+          <div class="msg">
+            ROI ${totals.roi.toFixed(1)}% em ${totals.settledCount} pacotes liquidados.
+            ${totals.roi > 0
+              ? "Amostra ainda pequena, mas o sinal está positivo — continue registrando."
+              : "Continue registrando. Se após 20–30 pacotes o ROI continuar negativo, o formato precisa ajuste."}
+            Pendentes não entram no ROI.
+          </div>
+        `;
+      } else if (totals.count) {
+        els.historyAdvice.hidden = false;
+        els.historyAdvice.className = "advice-box caution";
+        els.historyAdvice.innerHTML = `
+          <div class="title">Amostra pequena</div>
+          <div class="msg">Feche pelo menos 5 pacotes (marcar green/red) pra ler o ROI com um mínimo de confiança.</div>
+        `;
+      } else {
+        els.historyAdvice.hidden = true;
+      }
+
+      if (!historyPackages.length) {
+        els.historyList.innerHTML = `<div class="empty">Nenhum pacote salvo ainda. Gere bilhetes e clique em Salvar pacote.</div>`;
+        return;
+      }
+
+      els.historyList.innerHTML = historyPackages.map((pkg) => {
+        const staked = packageStake(pkg);
+        const returned = packageReturned(pkg);
+        const profit = returned - staked;
+        const settled = isPackageSettled(pkg);
+        const status = !settled ? "pending" : returned > 0 ? "won" : "lost";
+        const when = new Date(pkg.createdAt).toLocaleString("pt-BR");
+        const note = pkg.note ? ` · ${escapeHtml(pkg.note)}` : "";
+        const ticketsHtml = (pkg.tickets || []).map((t) => {
+          const oddTxt = t.odd != null ? Number(t.odd).toFixed(2) : "sem odd";
+          const pot = t.odd != null ? money((Number(t.stake) || 0) * Number(t.odd)) : "—";
+          const st = t.status || "pending";
+          const legs = (t.legs || [])
+            .map((l) => `${escapeHtml(l.home)} x ${escapeHtml(l.away)} → <b>${escapeHtml(l.result)}</b>${l.isAnchor ? " · ÂNCORA" : ""}`)
+            .join(" · ");
+          return `
+            <div class="history-ticket ${st === "green" ? "green" : st === "red" ? "red" : ""}">
+              <div class="ticket-head">
+                <strong>#${t.id} · ${st.toUpperCase()}</strong>
+                <div class="ticket-meta">Stake <b>${money(t.stake || 0)}</b> · Odd <b>${oddTxt}</b> · Potencial <b>${pot}</b></div>
+              </div>
+              <div style="font-size:0.84rem;color:var(--muted);">${legs}</div>
+              <div class="settle-actions">
+                <button class="btn btn-ok" type="button" data-hist="settle" data-pkg="${pkg.id}" data-ticket="${t.id}" data-status="green">Green</button>
+                <button class="btn btn-bad" type="button" data-hist="settle" data-pkg="${pkg.id}" data-ticket="${t.id}" data-status="red">Red</button>
+                <button class="btn btn-wait" type="button" data-hist="settle" data-pkg="${pkg.id}" data-ticket="${t.id}" data-status="pending">Pendente</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        return `
+          <article class="history-pkg ${status}">
+            <div class="history-pkg-head">
+              <div>
+                <strong>${when}</strong>${note}
+                <div class="hint" style="margin:0.2rem 0 0;">Modo ${escapeHtml(pkg.mode || "—")} · ${pkg.tickets.length} bilhete(s)</div>
+              </div>
+              <div class="ticket-meta">
+                Stake <b>${money(staked)}</b> · Retorno <b>${money(returned)}</b> · Lucro <b style="color:${profit >= 0 ? "var(--ok)" : "var(--danger)"}">${money(profit)}</b>
+              </div>
+            </div>
+            <div class="settle-actions">
+              <button class="btn btn-bad" type="button" data-hist="all-red" data-pkg="${pkg.id}">Marcar pacote todo red</button>
+              <button class="btn btn-danger" type="button" data-hist="delete" data-pkg="${pkg.id}">Excluir</button>
+            </div>
+            ${ticketsHtml}
+          </article>
+        `;
+      }).join("");
+    }
+
+    els.savePackage.addEventListener("click", saveCurrentPackage);
+    els.clearHistory.addEventListener("click", () => {
+      if (!historyPackages.length) return;
+      if (!confirm("Apagar todo o histórico deste navegador?")) return;
+      historyPackages = [];
+      saveHistory();
+      renderHistory();
+    });
+    els.exportHistory.addEventListener("click", () => {
+      if (!historyPackages.length) return;
+      const rows = [["pacote_id", "data", "nota", "modo", "bilhete", "status", "stake", "odd", "retorno", "pernas"]];
+      for (const pkg of historyPackages) {
+        for (const t of pkg.tickets || []) {
+          const retorno = t.status === "green" && t.odd != null
+            ? ((Number(t.stake) || 0) * Number(t.odd)).toFixed(2)
+            : "0";
+          const pernas = (t.legs || [])
+            .map((l) => `${l.home} x ${l.away}:${l.result}${l.odd != null ? `@${l.odd}` : ""}`)
+            .join(" / ");
+          rows.push([
+            pkg.id,
+            pkg.createdAt,
+            pkg.note || "",
+            pkg.mode || "",
+            t.id,
+            t.status || "pending",
+            Number(t.stake || 0).toFixed(2),
+            t.odd != null ? Number(t.odd).toFixed(4) : "",
+            retorno,
+            pernas,
+          ]);
+        }
+      }
+      const csv = rows.map((r) => r.map((c) => `"${String(c).replaceAll('"', '""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "desdobra-historico.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    els.historyList.addEventListener("click", (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLElement)) return;
+      const act = t.dataset.hist;
+      const pkgId = t.dataset.pkg;
+      if (!act || !pkgId) return;
+      if (act === "settle") {
+        settleTicket(pkgId, t.dataset.ticket, t.dataset.status);
+        return;
+      }
+      if (act === "all-red") {
+        if (confirm("Marcar todos os bilhetes deste pacote como red?")) settleAllRed(pkgId);
+        return;
+      }
+      if (act === "delete") {
+        if (confirm("Excluir este pacote do histórico?")) deletePackage(pkgId);
+      }
+    });
+
+    // Exemplos iniciais pra já entender o fluxo
+    state.matches = [
+      {
+        id: uid(),
+        home: "Porto",
+        away: "Braga",
+        selected: { ...emptySelection(), "1X": true },
+        odds: { ...emptyOdds(), "1": "1.72", X: "3.40", "2": "4.50", "1X": "1.28", "12": "1.22", X2: "2.05" },
+      },
+      {
+        id: uid(),
+        home: "Ajax",
+        away: "Feyenoord",
+        selected: { ...emptySelection(), "1": true, X: true },
+        odds: { ...emptyOdds(), "1": "2.10", X: "3.30", "2": "3.20", "1X": "1.35", "12": "1.30", X2: "1.70" },
+      },
+      {
+        id: uid(),
+        home: "Leipzig",
+        away: "Stuttgart",
+        selected: { ...emptySelection(), X2: true },
+        odds: { ...emptyOdds(), "1": "1.95", X: "3.50", "2": "3.60", "1X": "1.30", "12": "1.28", X2: "1.80" },
+      },
+    ];
+
+    renderOddLegend();
+    loadApiKey();
+    loadHistory();
+    renderHistory();
+    if (els.apiKey.value) {
+      setApiStatus("Chave carregada. Pode buscar Brasil Série A / B ou atualizar ligas.", "ok");
+    }
+    renderAll();
+  </script>
+</body>
+</html>
